@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+
+# Testing & Coverage
+coverage/
+
+# Next.js & Build Outputs
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# Logs & Debug
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment & Local Deployment
+.env*
+.vercel
+
+# System & Editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.pem
+.vscode/
+.idea/
+*.swp
+*.swo
+.freebuff/
+.freebuff*
+
+# Tooling caches
+.vite/
+.eslintcache
+
+# Local AI-assistant instructions (kept locally, not published)
+AGENTS.md
+DESIGN.md
+
+# web-ext local artifacts
+web-ext-artifacts/
+.web-extension-id
+
+# Packaging
+*.zip
+

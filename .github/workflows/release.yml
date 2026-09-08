@@ -1,0 +1,47 @@
+name: Release
+
+# Publishes a GitHub Release with the extension zip attached whenever a
+# version tag (v*) is pushed. Tag a release with:
+#   git tag v1.0.0 && git push origin v1.0.0
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write # required to create the Release and upload assets
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build and package extension
+        run: npm run build:extension
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ZIP="atrium-tabs-${GITHUB_REF_NAME#v}.zip"
+          gh release create "$GITHUB_REF_NAME" \
+            --title "Atrium Tabs ${GITHUB_REF_NAME#v}" \
+            --generate-notes \
+            "$ZIP"
