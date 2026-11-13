@@ -33,8 +33,8 @@ A minimalist, dark-themed start page and new tab replacement for your browser, w
 
 1. Clone the repository and navigate into it:
    ```bash
-   git clone https://github.com/itssljk/atrium-tabs.git
-   cd atrium-tabs
+   git clone https://github.com/itssljk/atrium.git
+   cd atrium
    ```
 
 2. Install dependencies:

@@ -7,8 +7,8 @@ documentation, and design improvements.
 ## Getting Started
 
 ```bash
-git clone https://github.com/itssljk/atrium-tabs.git
-cd atrium-tabs
+git clone https://github.com/itssljk/atrium.git
+cd atrium
 npm install
 npm run dev      # local dev server at http://localhost:5173
 ```
@@ -29,8 +29,8 @@ npm run build     # Production build
    `feat/weather-widget-hours` or `fix/accent-boot-flash`.
 3. **Keep PRs focused.** One feature or fix per PR, with a clear description
    of the problem and the change.
-4. **Match existing conventions.** This project follows the patterns in
-   `AGENTS.md` and `DESIGN.md`; please read them before touching UI.
+4. **Match existing conventions.** Follow the patterns in nearby code and the
+   code guidelines below.
 
 ## Code Guidelines
 
@@ -50,7 +50,7 @@ right to submit them under those terms.
 
 ## Reporting Bugs & Security Issues
 
-- Bugs and feature requests: [GitHub Issues](https://github.com/itssljk/atrium-tabs/issues)
+- Bugs and feature requests: [GitHub Issues](https://github.com/itssljk/atrium/issues)
 - **Security vulnerabilities: do NOT open a public issue.** See [SECURITY.md](./SECURITY.md)
 - Community questions: the [Atrium Tabs Discord](https://discord.gg/Kfn4V2nF3N)
 
