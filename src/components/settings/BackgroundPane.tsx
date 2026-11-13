@@ -214,7 +214,7 @@ export default function BackgroundPane({ background, appearance }: BackgroundPan
                 Dynamically match accent palette to wallpaper
               </span>
             </div>
-            <button type="button" onClick={() => appearance.setAccent(appearance.accentColor === "auto" ? "sage" : "auto")} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${appearance.accentColor === "auto" ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+            <button type="button" role="switch" aria-checked={appearance.accentColor === "auto"} aria-label="Auto Accent" onClick={() => appearance.setAccent(appearance.accentColor === "auto" ? "sage" : "auto")} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${appearance.accentColor === "auto" ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
               <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${appearance.accentColor === "auto" ? "translate-x-5" : "translate-x-0"}`}/>
             </button>
           </div>
@@ -228,7 +228,7 @@ export default function BackgroundPane({ background, appearance }: BackgroundPan
                 Adaptive contrast &amp; scrim for bright backgrounds
               </span>
             </div>
-            <button type="button" onClick={() => background.setSmartReadability(!background.smartReadability)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${background.smartReadability ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+            <button type="button" role="switch" aria-checked={background.smartReadability} aria-label="Smart Readability" onClick={() => background.setSmartReadability(!background.smartReadability)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${background.smartReadability ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
               <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${background.smartReadability ? "translate-x-5" : "translate-x-0"}`}/>
             </button>
           </div>

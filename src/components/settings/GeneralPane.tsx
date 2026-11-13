@@ -55,7 +55,7 @@ export default function GeneralPane({ general }: GeneralPaneProps) {
             </span>
             <span className="text-[10px] text-[var(--foreground)]/45">Show greeting headline, daily quote, or both</span>
           </div>
-          <button type="button" onClick={() => general.setShowGreeting(!general.showGreeting)} aria-label="Toggle greeting card" className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${general.showGreeting ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+          <button type="button" role="switch" aria-checked={general.showGreeting} onClick={() => general.setShowGreeting(!general.showGreeting)} aria-label="Toggle greeting card" className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${general.showGreeting ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
             <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md liquid-switch-thumb ${general.showGreeting ? "translate-x-5" : "translate-x-0"}`}/>
           </button>
         </div>
@@ -125,7 +125,7 @@ export default function GeneralPane({ general }: GeneralPaneProps) {
             </span>
             <span className="text-[10px] text-[var(--foreground)]/45">Show weather in the top corner</span>
           </div>
-          <button onClick={() => general.setShowWeather(!general.showWeather)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${general.showWeather ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+          <button role="switch" aria-checked={general.showWeather} aria-label="Weather Widget" onClick={() => general.setShowWeather(!general.showWeather)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${general.showWeather ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
             <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md liquid-switch-thumb ${general.showWeather ? "translate-x-5" : "translate-x-0"}`}/>
           </button>
         </div>
@@ -181,7 +181,7 @@ export default function GeneralPane({ general }: GeneralPaneProps) {
 
             <div data-anchor="weather-forecast" className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-[var(--foreground)]/80">Hourly Forecast on Hover</span>
-              <button onClick={() => general.setShowForecast(!general.showForecast)} className={`relative w-10 h-5.5 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${general.showForecast ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+              <button role="switch" aria-checked={general.showForecast} aria-label="Hourly Forecast on Hover" onClick={() => general.setShowForecast(!general.showForecast)} className={`relative w-10 h-5.5 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${general.showForecast ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
                 <div className={`w-4.5 h-4.5 rounded-full bg-[var(--background)] shadow-sm liquid-switch-thumb ${general.showForecast ? "translate-x-4.5" : "translate-x-0"}`}/>
               </button>
             </div>
@@ -196,7 +196,7 @@ export default function GeneralPane({ general }: GeneralPaneProps) {
             </span>
             <span className="text-[10px] text-[var(--foreground)]/45">Quick access to your inbox in the top corner</span>
           </div>
-          <button type="button" onClick={() => general.setShowMailButton(!general.showMailButton)} aria-label="Toggle email shortcut" className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${general.showMailButton ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+          <button type="button" role="switch" aria-checked={general.showMailButton} onClick={() => general.setShowMailButton(!general.showMailButton)} aria-label="Toggle email shortcut" className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${general.showMailButton ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
             <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md liquid-switch-thumb ${general.showMailButton ? "translate-x-5" : "translate-x-0"}`}/>
           </button>
         </div>
@@ -282,7 +282,7 @@ export default function GeneralPane({ general }: GeneralPaneProps) {
               Mirror shortcuts, search engines, and theme across devices via Firefox Sync
             </span>
           </div>
-          <button type="button" onClick={() => general.setSyncEnabled(!general.syncEnabled)} aria-label="Toggle Firefox Settings Sync" className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${general.syncEnabled ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+          <button type="button" role="switch" aria-checked={general.syncEnabled} onClick={() => general.setSyncEnabled(!general.syncEnabled)} aria-label="Toggle Firefox Settings Sync" className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${general.syncEnabled ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
             <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md liquid-switch-thumb ${general.syncEnabled ? "translate-x-5" : "translate-x-0"}`}/>
           </button>
         </div>

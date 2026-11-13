@@ -162,7 +162,7 @@ export default function SearchPane({ search }: SearchPaneProps) {
               Launch search queries into a new browser tab
             </span>
           </div>
-          <button onClick={() => search.setOpenInNewTab(!search.openInNewTab)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${search.openInNewTab ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+          <button role="switch" aria-checked={search.openInNewTab} aria-label="Open in New Tab" onClick={() => search.setOpenInNewTab(!search.openInNewTab)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${search.openInNewTab ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
             <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${search.openInNewTab ? "translate-x-5" : "translate-x-0"}`}/>
           </button>
         </div>
@@ -176,7 +176,7 @@ export default function SearchPane({ search }: SearchPaneProps) {
               Focus search input immediately when opening a new tab
             </span>
           </div>
-          <button onClick={() => search.setAutoFocus(!search.autoFocus)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${search.autoFocus ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+          <button role="switch" aria-checked={search.autoFocus} aria-label="Auto-focus Search Bar" onClick={() => search.setAutoFocus(!search.autoFocus)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${search.autoFocus ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
             <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${search.autoFocus ? "translate-x-5" : "translate-x-0"}`}/>
           </button>
         </div>

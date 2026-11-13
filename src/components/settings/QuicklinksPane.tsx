@@ -142,7 +142,7 @@ export default function QuicklinksPane({ quicklinksManager }: QuicklinksPaneProp
       <div className="flex flex-col gap-2 bg-[var(--foreground)]/3 p-3.5 rounded-2xl border border-[var(--glass-border)]/40">
         <div className="flex items-center justify-between py-1 border-b border-[var(--divider)]">
           <span className="text-xs font-medium text-[var(--foreground)]/90">Enable Shortcuts Bar</span>
-          <button onClick={() => quicklinksManager.setShowQuicklinks(!quicklinksManager.showQuicklinks)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${quicklinksManager.showQuicklinks ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+          <button role="switch" aria-checked={quicklinksManager.showQuicklinks} aria-label="Enable Shortcuts Bar" onClick={() => quicklinksManager.setShowQuicklinks(!quicklinksManager.showQuicklinks)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${quicklinksManager.showQuicklinks ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
             <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md liquid-switch-thumb ${quicklinksManager.showQuicklinks ? "translate-x-5" : "translate-x-0"}`}/>
           </button>
         </div>
@@ -152,21 +152,21 @@ export default function QuicklinksPane({ quicklinksManager }: QuicklinksPaneProp
             <span className="text-xs font-medium text-[var(--foreground)]/90">Number Shortcuts (1-9)</span>
             <span className="text-[9px] text-[var(--foreground)]/45">Display numeric keyboard shortcuts</span>
           </div>
-          <button onClick={() => quicklinksManager.setShowKeycaps(!quicklinksManager.showKeycaps)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${quicklinksManager.showKeycaps ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+          <button role="switch" aria-checked={quicklinksManager.showKeycaps} aria-label="Number Shortcuts (1-9)" onClick={() => quicklinksManager.setShowKeycaps(!quicklinksManager.showKeycaps)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${quicklinksManager.showKeycaps ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
             <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md liquid-switch-thumb ${quicklinksManager.showKeycaps ? "translate-x-5" : "translate-x-0"}`}/>
           </button>
         </div>
 
         <div className="flex items-center justify-between py-1 border-b border-[var(--divider)]">
           <span className="text-xs font-medium text-[var(--foreground)]/90">Show Text Labels</span>
-          <button onClick={() => quicklinksManager.setShowLabels(!quicklinksManager.showLabels)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${quicklinksManager.showLabels ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+          <button role="switch" aria-checked={quicklinksManager.showLabels} aria-label="Show Text Labels" onClick={() => quicklinksManager.setShowLabels(!quicklinksManager.showLabels)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${quicklinksManager.showLabels ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
             <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md liquid-switch-thumb ${quicklinksManager.showLabels ? "translate-x-5" : "translate-x-0"}`}/>
           </button>
         </div>
 
         <div className="flex items-center justify-between py-1">
           <span className="text-xs font-medium text-[var(--foreground)]/90">Show &ldquo;+&rdquo; Add Button</span>
-          <button onClick={() => quicklinksManager.setShowAddButton(!quicklinksManager.showAddButton)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${quicklinksManager.showAddButton ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+          <button role="switch" aria-checked={quicklinksManager.showAddButton} aria-label="Show “+” Add Button" onClick={() => quicklinksManager.setShowAddButton(!quicklinksManager.showAddButton)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${quicklinksManager.showAddButton ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
             <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md liquid-switch-thumb ${quicklinksManager.showAddButton ? "translate-x-5" : "translate-x-0"}`}/>
           </button>
         </div>

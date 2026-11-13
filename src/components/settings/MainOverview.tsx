@@ -205,7 +205,7 @@ export default function MainOverview({ appearance, background, search, quicklink
               Soft breathing halo behind search coordinates
             </span>
           </div>
-          <button onClick={() => appearance.setGlow(!appearance.glowEnabled)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${appearance.glowEnabled ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+          <button role="switch" aria-checked={appearance.glowEnabled} aria-label="Ambient Glow" onClick={() => appearance.setGlow(!appearance.glowEnabled)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${appearance.glowEnabled ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
             <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md liquid-switch-thumb ${appearance.glowEnabled ? "translate-x-5" : "translate-x-0"}`}/>
           </button>
         </div>
@@ -219,7 +219,7 @@ export default function MainOverview({ appearance, background, search, quicklink
               Kills intensive animations, blur transitions & loops
             </span>
           </div>
-          <button onClick={() => appearance.setPerf(!appearance.performanceMode)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${appearance.performanceMode ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+          <button role="switch" aria-checked={appearance.performanceMode} aria-label="Low Motion Mode" onClick={() => appearance.setPerf(!appearance.performanceMode)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${appearance.performanceMode ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
             <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md liquid-switch-thumb ${appearance.performanceMode ? "translate-x-5" : "translate-x-0"}`}/>
           </button>
         </div>
