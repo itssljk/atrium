@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useId, useLayoutEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Plus, Pencil, X, Trash2 } from "lucide-react";
 import { type Quicklink } from "@/utils/quicklinks";
@@ -43,7 +43,10 @@ export default function Quicklinks() {
     const [iconTypeInput, setIconTypeInput] = useState<"auto" | "emoji" | "text">("auto");
     const [customIconInput, setCustomIconInput] = useState("");
     const [modalError, setModalError] = useState<string | null>(null);
-    const modalRef = useRef<HTMLDivElement>(null);
+    const dialogId = useId();
+    const modalRef = useRef<HTMLDialogElement>(null);
+    const openerRef = useRef<HTMLButtonElement | null>(null);
+    const quicklinksRef = useRef<HTMLDivElement>(null);
     const nameInputRef = useRef<HTMLInputElement>(null);
     useEffect(() => {
         linksRef.current = links;
@@ -51,6 +54,8 @@ export default function Quicklinks() {
     useEffect(() => {
         setMounted(true);
         const handleKeyDown = (e: KeyboardEvent) => {
+            if (modalRef.current?.open)
+                return;
             const activeEl = document.activeElement;
             const isInput = activeEl?.tagName === "INPUT" ||
                 activeEl?.tagName === "TEXTAREA" ||
@@ -72,7 +77,8 @@ export default function Quicklinks() {
             window.removeEventListener("keydown", handleKeyDown);
         };
     }, []);
-    const openAddModal = () => {
+    const openAddModal = (e: React.MouseEvent<HTMLButtonElement>) => {
+        openerRef.current = e.currentTarget;
         setEditingLink(null);
         setNameInput("");
         setUrlInput("");
@@ -80,9 +86,9 @@ export default function Quicklinks() {
         setCustomIconInput("");
         setModalError(null);
         setIsModalOpen(true);
-        setTimeout(() => nameInputRef.current?.focus(), 50);
     };
-    const openEditModal = (link: Quicklink) => {
+    const openEditModal = (link: Quicklink, opener: HTMLButtonElement) => {
+        openerRef.current = opener;
         setEditingLink(link);
         setNameInput(link.title);
         setUrlInput(link.url);
@@ -90,9 +96,9 @@ export default function Quicklinks() {
         setCustomIconInput(link.customIcon || "");
         setModalError(null);
         setIsModalOpen(true);
-        setTimeout(() => nameInputRef.current?.focus(), 50);
     };
     const closeModal = () => {
+        modalRef.current?.close();
         setIsModalOpen(false);
         setEditingLink(null);
         setNameInput("");
@@ -101,19 +107,22 @@ export default function Quicklinks() {
         setCustomIconInput("");
         setModalError(null);
     };
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-                closeModal();
-            }
-        };
-        if (isModalOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
+    useLayoutEffect(() => {
+        const modal = modalRef.current;
+        if (modal && !modal.open) {
+            modal.showModal();
+            nameInputRef.current?.focus();
         }
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, [isModalOpen]);
+
+        if (!isModalOpen && openerRef.current) {
+            const opener = openerRef.current;
+            openerRef.current = null;
+            opener.focus({ preventScroll: true });
+            if (document.activeElement !== opener) {
+                quicklinksRef.current?.focus({ preventScroll: true });
+            }
+        }
+    }, [isModalOpen, showQuicklinks, quicklinksStyle]);
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
         if (!nameInput.trim() || !urlInput.trim())
@@ -173,51 +182,66 @@ export default function Quicklinks() {
     const renderModal = () => {
         if (!isModalOpen || !mounted || typeof document === "undefined")
             return null;
-        return createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-fade-in">
-        <div ref={modalRef} className="w-full max-w-sm max-h-[85dvh] overflow-y-auto rounded-2xl glass-input p-6 flex flex-col gap-4 animate-liquid-pop text-left relative shadow-2xl mb-[env(safe-area-inset-bottom)]">
-          <button type="button" onClick={closeModal} className="absolute top-4 right-4 p-1.5 rounded-lg text-[var(--foreground)]/50 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/5 cursor-pointer transition-all duration-200">
+        return createPortal(<dialog
+        ref={modalRef}
+        aria-labelledby={`${dialogId}-title`}
+        onCancel={(e) => {
+            e.preventDefault();
+            closeModal();
+        }}
+        onKeyDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+                e.preventDefault();
+                closeModal();
+            }
+        }}
+        className="fixed inset-0 m-0 h-full w-full max-h-none max-w-none items-center justify-center bg-black/65 p-4 backdrop-blur-md backdrop:bg-transparent animate-fade-in open:flex"
+      >
+        <div className="w-full max-w-sm max-h-[85dvh] overflow-y-auto rounded-2xl glass-input p-6 flex flex-col gap-4 animate-liquid-pop text-left relative shadow-2xl mb-[env(safe-area-inset-bottom)]">
+          <button type="button" onClick={closeModal} aria-label="Close shortcut dialog" className="absolute top-4 right-4 p-1.5 rounded-lg text-[var(--foreground)]/50 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/5 cursor-pointer transition-all duration-200">
             <X className="w-4 h-4"/>
           </button>
 
-          <h3 className="text-base font-semibold text-[var(--foreground)]">
+          <h3 id={`${dialogId}-title`} className="text-base font-semibold text-[var(--foreground)]">
             {editingLink ? "Edit Shortcut" : "Add Shortcut"}
           </h3>
 
-          {modalError && (<div className="p-3 text-xs text-rose-500 bg-rose-500/10 rounded-xl border border-rose-500/20">
+          {modalError && (<div role="alert" className="p-3 text-xs text-rose-500 bg-rose-500/10 rounded-xl border border-rose-500/20">
               {modalError}
             </div>)}
 
           <form onSubmit={handleSave} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-medium tracking-wide uppercase text-[var(--foreground)]/50">
+              <label htmlFor={`${dialogId}-name`} className="text-[11px] font-medium tracking-wide uppercase text-[var(--foreground)]/50">
                 Name
               </label>
-              <input ref={nameInputRef} type="text" placeholder="e.g. GitHub" value={nameInput} onChange={(e) => setNameInput(e.target.value)} required maxLength={20} className="w-full h-[38px] px-3.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-sm text-[var(--foreground)] placeholder-[var(--foreground)]/30 focus:outline-none focus:border-[var(--accent)] focus:bg-[var(--foreground)]/8 transition-all duration-300"/>
+              <input id={`${dialogId}-name`} ref={nameInputRef} type="text" placeholder="e.g. GitHub" value={nameInput} onChange={(e) => setNameInput(e.target.value)} required maxLength={20} className="w-full h-[38px] px-3.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-sm text-[var(--foreground)] placeholder-[var(--foreground)]/30 focus:outline-none focus:border-[var(--accent)] focus:bg-[var(--foreground)]/8 transition-all duration-300"/>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-medium tracking-wide uppercase text-[var(--foreground)]/50">
+              <label htmlFor={`${dialogId}-url`} className="text-[11px] font-medium tracking-wide uppercase text-[var(--foreground)]/50">
                 URL
               </label>
-              <input type="text" placeholder="e.g. https://github.com" value={urlInput} onChange={(e) => setUrlInput(e.target.value)} required className="w-full h-[38px] px-3.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-sm text-[var(--foreground)] placeholder-[var(--foreground)]/30 focus:outline-none focus:border-[var(--accent)] focus:bg-[var(--foreground)]/8 transition-all duration-300"/>
+              <input id={`${dialogId}-url`} type="text" placeholder="e.g. https://github.com" value={urlInput} onChange={(e) => setUrlInput(e.target.value)} required className="w-full h-[38px] px-3.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-sm text-[var(--foreground)] placeholder-[var(--foreground)]/30 focus:outline-none focus:border-[var(--accent)] focus:bg-[var(--foreground)]/8 transition-all duration-300"/>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-medium tracking-wide uppercase text-[var(--foreground)]/50">
+              <span id={`${dialogId}-icon-style`} className="text-[11px] font-medium tracking-wide uppercase text-[var(--foreground)]/50">
                 Icon Style
-              </label>
-              <div className="flex gap-1.5 bg-[var(--foreground)]/5 p-1 rounded-lg border border-[var(--glass-border)]">
-                <button type="button" onClick={() => setIconTypeInput("auto")} className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 cursor-pointer ${iconTypeInput === "auto"
+              </span>
+              <div role="group" aria-labelledby={`${dialogId}-icon-style`} className="flex gap-1.5 bg-[var(--foreground)]/5 p-1 rounded-lg border border-[var(--glass-border)]">
+                <button type="button" aria-pressed={iconTypeInput === "auto"} onClick={() => setIconTypeInput("auto")} className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 cursor-pointer ${iconTypeInput === "auto"
                 ? "bg-[var(--accent)] text-[var(--background)] font-semibold shadow-sm"
                 : "text-[var(--foreground)]/60 hover:text-[var(--foreground)]"}`}>
                   Auto Favicon
                 </button>
-                <button type="button" onClick={() => setIconTypeInput("emoji")} className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 cursor-pointer ${iconTypeInput === "emoji"
+                <button type="button" aria-pressed={iconTypeInput === "emoji"} onClick={() => setIconTypeInput("emoji")} className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 cursor-pointer ${iconTypeInput === "emoji"
                 ? "bg-[var(--accent)] text-[var(--background)] font-semibold shadow-sm"
                 : "text-[var(--foreground)]/60 hover:text-[var(--foreground)]"}`}>
                   Emoji
                 </button>
-                <button type="button" onClick={() => setIconTypeInput("text")} className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 cursor-pointer ${iconTypeInput === "text"
+                <button type="button" aria-pressed={iconTypeInput === "text"} onClick={() => setIconTypeInput("text")} className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 cursor-pointer ${iconTypeInput === "text"
                 ? "bg-[var(--accent)] text-[var(--background)] font-semibold shadow-sm"
                 : "text-[var(--foreground)]/60 hover:text-[var(--foreground)]"}`}>
                   Badge
@@ -226,10 +250,10 @@ export default function Quicklinks() {
             </div>
 
             {iconTypeInput !== "auto" && (<div className="flex flex-col gap-1.5 animate-liquid-drop">
-                <label className="text-[11px] font-medium tracking-wide uppercase text-[var(--foreground)]/50">
+                <label htmlFor={`${dialogId}-custom-icon`} className="text-[11px] font-medium tracking-wide uppercase text-[var(--foreground)]/50">
                   {iconTypeInput === "emoji" ? "Emoji Icon" : "Badge Text (1-2 chars)"}
                 </label>
-                <input type="text" placeholder={iconTypeInput === "emoji" ? "e.g. 🚀 or 💻" : "e.g. GH"} value={customIconInput} onChange={(e) => setCustomIconInput(e.target.value)} maxLength={iconTypeInput === "emoji" ? 4 : 2} className="w-full h-[38px] px-3.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-sm text-[var(--foreground)] placeholder-[var(--foreground)]/30 focus:outline-none focus:border-[var(--accent)] focus:bg-[var(--foreground)]/8 transition-all duration-300"/>
+                <input id={`${dialogId}-custom-icon`} type="text" placeholder={iconTypeInput === "emoji" ? "e.g. 🚀 or 💻" : "e.g. GH"} value={customIconInput} onChange={(e) => setCustomIconInput(e.target.value)} maxLength={iconTypeInput === "emoji" ? 4 : 2} className="w-full h-[38px] px-3.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-sm text-[var(--foreground)] placeholder-[var(--foreground)]/30 focus:outline-none focus:border-[var(--accent)] focus:bg-[var(--foreground)]/8 transition-all duration-300"/>
               </div>)}
 
             <div className="flex items-center justify-between gap-3 mt-2">
@@ -249,10 +273,10 @@ export default function Quicklinks() {
             </div>
           </form>
         </div>
-      </div>, document.body);
+      </dialog>, document.body);
     };
     if (quicklinksStyle === "dock") {
-        return (<div className="w-full flex items-center justify-center py-2 select-none animate-fade-in-up">
+        return (<div ref={quicklinksRef} tabIndex={-1} className="w-full flex items-center justify-center py-2 select-none animate-fade-in-up">
         <div className={`inline-flex flex-wrap items-center justify-center gap-2 p-1.5 sm:p-2 bg-[var(--glass-bg)]/85 backdrop-blur-2xl border border-[var(--glass-border)] shadow-[0_12px_40px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.12)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-full ${dockShape}`}>
           {links.map((link, index) => {
                 const isDragging = index === draggedIndex;
@@ -269,12 +293,12 @@ export default function Quicklinks() {
                 <button type="button" onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        openEditModal(link);
+                        openEditModal(link, e.currentTarget);
                     }} className="sm:hidden absolute -top-1 -right-1 p-1 rounded-full bg-[var(--background)] border border-[var(--glass-border)] text-[var(--foreground)]/45 active:text-[var(--accent)] cursor-pointer shadow-xs" aria-label={`Edit ${link.title}`}>
                   <Pencil className="w-2.5 h-2.5"/>
                 </button>
 
-                <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 group-hover:-translate-y-1 translate-y-1 pointer-events-none group-hover:pointer-events-auto transition-all duration-200 z-30 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[var(--background)]/90 backdrop-blur-md border border-[var(--glass-border)] shadow-[0_8px_20px_rgba(0,0,0,0.35)] whitespace-nowrap">
+                <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 group-hover:-translate-y-1 translate-y-1 pointer-events-none group-hover:pointer-events-auto transition-all duration-200 z-30 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[var(--background)]/90 backdrop-blur-md border border-[var(--glass-border)] shadow-[0_8px_20px_rgba(0,0,0,0.35)] whitespace-nowrap">
                   <span className="text-[11px] font-medium text-[var(--foreground)]">{link.title}</span>
                   {showKeycaps && index < 9 && (<span className="px-1.5 py-0.5 rounded bg-[var(--foreground)]/10 text-[9px] font-mono font-medium text-[var(--accent)]">
                       {index + 1}
@@ -282,7 +306,7 @@ export default function Quicklinks() {
                   <button type="button" onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        openEditModal(link);
+                        openEditModal(link, e.currentTarget);
                     }} className="p-0.5 text-[var(--foreground)]/40 hover:text-[var(--accent)] rounded cursor-pointer transition-colors" title="Edit shortcut">
                     <Pencil className="w-2.5 h-2.5"/>
                   </button>
@@ -290,7 +314,7 @@ export default function Quicklinks() {
               </div>);
             })}
 
-          {showAddButton && links.length < 12 && (<button type="button" onClick={openAddModal} title="Add Link" className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center border border-dashed border-[var(--glass-border)]/50 text-[var(--foreground)]/40 hover:text-[var(--accent)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent)]/10 hover:scale-115 active:scale-95 transition-all duration-250 cursor-pointer ${itemShape}`}>
+          {showAddButton && links.length < 12 && (<button type="button" onClick={openAddModal} aria-label="Add Link" title="Add Link" className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center border border-dashed border-[var(--glass-border)]/50 text-[var(--foreground)]/40 hover:text-[var(--accent)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent)]/10 hover:scale-115 active:scale-95 transition-all duration-250 cursor-pointer ${itemShape}`}>
               <Plus className="w-4 h-4"/>
             </button>)}
         </div>
@@ -298,7 +322,7 @@ export default function Quicklinks() {
       </div>);
     }
     if (quicklinksStyle === "grid") {
-        return (<div className="w-full flex flex-wrap items-center justify-center gap-3 sm:gap-5 py-2 select-none animate-fade-in-up">
+        return (<div ref={quicklinksRef} tabIndex={-1} className="w-full flex flex-wrap items-center justify-center gap-3 sm:gap-5 py-2 select-none animate-fade-in-up">
         {links.map((link, index) => {
                 const isDragging = index === draggedIndex;
                 const isOver = index === dragOverIndex;
@@ -316,8 +340,8 @@ export default function Quicklinks() {
                 <button type="button" onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        openEditModal(link);
-                    }} className="absolute -top-1 -right-1 opacity-100 sm:opacity-0 sm:scale-75 sm:group-hover:opacity-100 sm:group-hover:scale-100 transition-all duration-200 p-1 rounded-full bg-[var(--background)] border border-[var(--glass-border)] text-[var(--foreground)]/45 hover:text-[var(--accent)] cursor-pointer shadow-xs" title="Edit shortcut">
+                        openEditModal(link, e.currentTarget);
+                    }} className="absolute -top-1 -right-1 opacity-100 sm:opacity-0 sm:scale-75 sm:group-hover:opacity-100 sm:group-hover:scale-100 focus-visible:opacity-100 focus-visible:scale-100 transition-all duration-200 p-1 rounded-full bg-[var(--background)] border border-[var(--glass-border)] text-[var(--foreground)]/45 hover:text-[var(--accent)] cursor-pointer shadow-xs" title="Edit shortcut">
                   <Pencil className="w-2.5 h-2.5"/>
                 </button>
               </div>
@@ -328,7 +352,7 @@ export default function Quicklinks() {
             </a>);
             })}
 
-        {showAddButton && links.length < 12 && (<button type="button" onClick={openAddModal} className="group flex flex-col items-center select-none w-16 sm:w-20 cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
+        {showAddButton && links.length < 12 && (<button type="button" onClick={openAddModal} aria-label="Add Link" className="group flex flex-col items-center select-none w-16 sm:w-20 cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
             <div className={`w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center border border-dashed border-[var(--glass-border)] group-hover:border-[var(--accent)]/50 bg-[var(--glass-bg)]/60 backdrop-blur-md text-[var(--foreground)]/45 group-hover:bg-[var(--glass-bg)] group-hover:text-[var(--accent)] group-hover:shadow-[0_0_16px_var(--accent-glow)] group-hover:scale-110 active:scale-95 transition-all duration-250 ${itemShape}`}>
               <Plus className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:rotate-90 group-hover:scale-110"/>
             </div>
@@ -339,7 +363,7 @@ export default function Quicklinks() {
         {renderModal()}
       </div>);
     }
-    return (<div className="w-full flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 py-2 select-none animate-fade-in-up">
+    return (<div ref={quicklinksRef} tabIndex={-1} className="w-full flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 py-2 select-none animate-fade-in-up">
       {links.map((link, index) => {
             const isDragging = index === draggedIndex;
             const isOver = index === dragOverIndex;
@@ -361,14 +385,14 @@ export default function Quicklinks() {
             <button type="button" onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    openEditModal(link);
-                }} className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:text-[var(--accent)] text-[var(--foreground)]/40 p-1.5 sm:p-0.5 rounded transition-all duration-200 cursor-pointer" title="Edit shortcut">
+                    openEditModal(link, e.currentTarget);
+                }} className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--accent)] text-[var(--foreground)]/40 p-1.5 sm:p-0.5 rounded transition-all duration-200 cursor-pointer" title="Edit shortcut">
               <Pencil className="w-2.5 h-2.5"/>
             </button>
           </a>);
         })}
 
-      {showAddButton && links.length < 12 && (<button type="button" onClick={openAddModal} className={`group flex items-center gap-1.5 px-3 py-1.5 sm:px-3 sm:py-2 select-none border border-dashed border-[var(--glass-border)] bg-[var(--glass-bg)]/60 backdrop-blur-md hover:border-[var(--accent)]/60 text-[var(--foreground)]/45 hover:text-[var(--accent)] hover:bg-[var(--glass-bg)] hover:shadow-[0_0_14px_var(--accent-glow)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.02] active:scale-95 cursor-pointer ${itemShape}`}>
+      {showAddButton && links.length < 12 && (<button type="button" onClick={openAddModal} aria-label="Add Link" className={`group flex items-center gap-1.5 px-3 py-1.5 sm:px-3 sm:py-2 select-none border border-dashed border-[var(--glass-border)] bg-[var(--glass-bg)]/60 backdrop-blur-md hover:border-[var(--accent)]/60 text-[var(--foreground)]/45 hover:text-[var(--accent)] hover:bg-[var(--glass-bg)] hover:shadow-[0_0_14px_var(--accent-glow)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.02] active:scale-95 cursor-pointer ${itemShape}`}>
           <Plus className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-90 group-hover:scale-110"/>
           {showLabels && <span className="text-xs font-medium">Add Link</span>}
         </button>)}
