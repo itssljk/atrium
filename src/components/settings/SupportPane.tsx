@@ -4,7 +4,15 @@ import { MessageSquare, Scale, ShieldCheck, PenLine, Archive, Download, Upload, 
 import Link from "@/components/core/Link";
 import { siteConfig } from "@/config/site";
 import { exportSettingsToFile, importSettingsFromJson, resetAllSettings } from "@/utils/backup";
-export default function SupportPane() {
+import type { SettingsPane } from "@/utils/useSettingsDrawer";
+
+const exploreFeatures = [
+    { pane: "search", title: "Search bangs", description: "Start a query with a bang such as !g to search Google directly.", button: "Search settings" },
+    { pane: "quicklinks", title: "Shortcut keys", description: "Press 1–9 outside a text field to open the matching shortcut in order.", button: "Quicklinks settings" },
+    { pane: "background", title: "Wallpapers", description: "Try a daily wallpaper, choose a curated image, or use your own.", button: "Background settings" },
+] as const;
+
+export default function SupportPane({ onNavigate }: { onNavigate: (pane: SettingsPane) => void }) {
     const [copiedInvite, setCopiedInvite] = useState(false);
     const handleCopyInvite = () => {
         navigator.clipboard.writeText(siteConfig.links.discord);
@@ -76,6 +84,23 @@ export default function SupportPane() {
         }, 800);
     };
     return (<div className="flex flex-col gap-5">
+      <section className="flex flex-col gap-3 p-4 rounded-2xl bg-[var(--foreground)]/2 border border-[var(--glass-border)]/30">
+        <h3 className="text-sm font-semibold text-[var(--foreground)]">Explore Atrium</h3>
+        <ul className="flex flex-col divide-y divide-[var(--divider)]">
+          {exploreFeatures.map(({ pane, title, description, button }) => (
+            <li key={pane} className="flex flex-wrap items-center justify-between gap-2 py-2 first:pt-0 last:pb-0">
+              <div className="flex min-w-0 flex-1 basis-36 flex-col gap-0.5">
+                <span className="text-xs font-medium text-[var(--foreground)]">{title}</span>
+                <span className="text-[11px] text-[var(--foreground)]/70">{description}</span>
+              </div>
+              <button type="button" onClick={() => onNavigate(pane)} className="px-3 py-1.5 rounded-xl bg-[var(--foreground)]/5 hover:bg-[var(--foreground)]/10 text-[var(--foreground)]/80 text-xs font-medium cursor-pointer border border-[var(--glass-border)]/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]">
+                {button}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <div className="p-4 rounded-2xl bg-[var(--foreground)]/3 border border-[var(--glass-border)]/45 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
