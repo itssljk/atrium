@@ -164,7 +164,7 @@ export default function PreferencesDrawer({ isOpen, activePane, setActivePane, c
 
             {activeSubpaneType === "general" && <GeneralPane general={general}/>}
 
-            {activeSubpaneType === "support" && <SupportPane />}
+            {activePane === "support" && <SupportPane onNavigate={setActivePane}/>}
           </div>
         </div>
 
