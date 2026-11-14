@@ -148,7 +148,7 @@ export default function GeneralPane({ general }: GeneralPaneProps) {
                     <span className="truncate font-semibold flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-[var(--accent)]"/> {general.manualLocation.name}
                     </span>
-                    <button onClick={() => general.updateManualLocation(null)} className="p-1 text-[var(--foreground)]/40 hover:text-rose-400 cursor-pointer active:scale-90">
+                    <button type="button" aria-label="Clear weather location" onClick={() => general.updateManualLocation(null)} className="p-1 text-[var(--foreground)]/40 hover:text-rose-400 cursor-pointer active:scale-90">
                       <X className="w-3.5 h-3.5"/>
                     </button>
                   </div>) : (<div className="relative">
