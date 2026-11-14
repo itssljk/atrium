@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, CloudSun, User, MapPin, Thermometer, X, Search, Loader2, Mail, RefreshCw, } from "lucide-react";
 import { searchCities, type GeoCityResult } from "@/utils/weather";
 import type { GeneralManager } from "./types";
@@ -10,30 +10,26 @@ export default function GeneralPane({ general }: GeneralPaneProps) {
     const [citySearchQuery, setCitySearchQuery] = useState("");
     const [cityResults, setCityResults] = useState<GeoCityResult[]>([]);
     const [cityLoading, setCityLoading] = useState(false);
-    const [showCityDropdown, setShowCityDropdown] = useState(false);
-    const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
     const handleCitySearchChange = (val: string) => {
         setCitySearchQuery(val);
-        if (!val.trim() || val.length < 2) {
-            setCityResults([]);
-            setShowCityDropdown(false);
-        }
+        setCityResults([]);
+        setCityLoading(false);
     };
     useEffect(() => {
-        if (!citySearchQuery.trim() || citySearchQuery.length < 2)
+        if (citySearchQuery.trim().length < 2)
             return;
-        if (searchTimeoutRef.current)
-            clearTimeout(searchTimeoutRef.current);
-        searchTimeoutRef.current = setTimeout(async () => {
+        let cancelled = false;
+        const timeout = setTimeout(async () => {
             setCityLoading(true);
             const results = await searchCities(citySearchQuery);
+            if (cancelled)
+                return;
             setCityResults(results);
-            setShowCityDropdown(results.length > 0);
             setCityLoading(false);
         }, 350);
         return () => {
-            if (searchTimeoutRef.current)
-                clearTimeout(searchTimeoutRef.current);
+            cancelled = true;
+            clearTimeout(timeout);
         };
     }, [citySearchQuery]);
     const handleSelectCity = (city: GeoCityResult) => {
@@ -42,8 +38,7 @@ export default function GeneralPane({ general }: GeneralPaneProps) {
             lat: city.lat,
             lon: city.lon,
         });
-        setCitySearchQuery("");
-        setShowCityDropdown(false);
+        handleCitySearchChange("");
     };
     return (<div className="flex flex-col gap-5">
 
@@ -156,7 +151,7 @@ export default function GeneralPane({ general }: GeneralPaneProps) {
                     <Search className="w-3.5 h-3.5 text-[var(--foreground)]/40 absolute left-2.5 top-2.5 pointer-events-none"/>
                     {cityLoading && <Loader2 className="w-3.5 h-3.5 text-[var(--accent)] animate-spin absolute right-2.5 top-2.5"/>}
 
-                    {showCityDropdown && cityResults.length > 0 && (<div className="absolute top-full left-0 right-0 z-30 mt-1 rounded-xl bg-[var(--glass-bg-dropdown)] backdrop-blur-2xl border border-[var(--glass-border)] overflow-hidden shadow-xl">
+                    {cityResults.length > 0 && (<div className="absolute top-full left-0 right-0 z-30 mt-1 rounded-xl bg-[var(--glass-bg-dropdown)] backdrop-blur-2xl border border-[var(--glass-border)] overflow-hidden shadow-xl">
                         {cityResults.map((city, i) => (<button key={`${city.lat}-${city.lon}-${i}`} type="button" onClick={() => handleSelectCity(city)} className="w-full px-3 py-2 text-left text-xs text-[var(--foreground)]/80 hover:text-[var(--accent)] hover:bg-[var(--foreground)]/5 flex items-center gap-1.5 border-b border-[var(--divider)] last:border-b-0 cursor-pointer">
                             <MapPin className="w-3 h-3 text-[var(--accent)] shrink-0"/>
                             <span className="truncate">{city.name}</span>
