@@ -99,10 +99,28 @@ describe("Widgets & UI Components", () => {
         });
     });
     describe("SupportPane", () => {
-        it("renders backup, restore, reset, and legal sections", async () => {
+        it("renders support sections and opens settings from Explore Atrium", async () => {
+            const onNavigate = vi.fn();
             await act(async () => {
-                root.render(<SupportPane />);
+                root.render(<SupportPane onNavigate={onNavigate} />);
             });
+            const explore = container.querySelector("section");
+            expect(explore?.querySelector("h3")?.textContent).toBe("Explore Atrium");
+            expect(explore?.textContent).toContain("Start a query with a bang such as !g to search Google directly.");
+            expect(explore?.textContent).toContain("Press 1–9 outside a text field to open the matching shortcut in order.");
+            expect(explore?.textContent).toContain("Try a daily wallpaper, choose a curated image, or use your own.");
+
+            const buttons = Array.from(explore?.querySelectorAll("button") ?? []);
+            expect(buttons.map((button) => button.textContent?.trim())).toEqual([
+                "Search settings",
+                "Quicklinks settings",
+                "Background settings",
+            ]);
+            for (const button of buttons) {
+                act(() => button.click());
+            }
+            expect(onNavigate.mock.calls).toEqual([["search"], ["quicklinks"], ["background"]]);
+
             expect(container.textContent).toContain("Atrium Community");
             expect(container.textContent).toContain("Backup & Reset");
             expect(container.textContent).toContain("Export Backup");
