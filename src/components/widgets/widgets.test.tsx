@@ -1,11 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from "vitest";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import SearchBar from "./SearchBar";
 import Greeting from "./Greeting";
 import MailWidget from "./MailWidget";
 import SupportPane from "../settings/SupportPane";
+import GeneralPane from "../settings/GeneralPane";
 import { settings } from "@/utils/settings";
+import { useGeneralManager } from "@/utils/useGeneralManager";
+import * as weather from "@/utils/weather";
 (globalThis as {
     IS_REACT_ACT_ENVIRONMENT?: boolean;
 }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -96,6 +99,66 @@ describe("Widgets & UI Components", () => {
                 root.render(<MailWidget />);
             });
             expect(container.querySelector("a")).toBeNull();
+        });
+    });
+    describe("GeneralPane city search", () => {
+        const pending = new Map<string, (results: weather.GeoCityResult[]) => void>();
+        let searchCitiesSpy: MockInstance<typeof weather.searchCities>;
+
+        beforeEach(async () => {
+            vi.useFakeTimers();
+            pending.clear();
+            searchCitiesSpy = vi.spyOn(weather, "searchCities").mockImplementation((query) => new Promise((resolve) => {
+                pending.set(query, resolve);
+            }));
+            function ManualWeatherPane() {
+                const general = useGeneralManager();
+                return <GeneralPane general={{ ...general, showWeather: true, weatherMode: "manual", manualLocation: null }} />;
+            }
+            await act(async () => root.render(<ManualWeatherPane />));
+        });
+
+        afterEach(() => {
+            searchCitiesSpy.mockRestore();
+            vi.clearAllTimers();
+            vi.useRealTimers();
+        });
+
+        async function enterQuery(query: string) {
+            const input = container.querySelector<HTMLInputElement>('input[placeholder^="Search city"]')!;
+            const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+            await act(async () => {
+                setValue.call(input, query);
+                input.dispatchEvent(new Event("input", { bubbles: true }));
+            });
+            await act(async () => vi.advanceTimersByTimeAsync(350));
+        }
+
+        async function resolveSearch(query: string, city: string) {
+            const resolve = pending.get(query);
+            expect(resolve).toBeDefined();
+            await act(async () => resolve!([{ name: city, lat: 1, lon: 2 }]));
+        }
+
+        it("keeps newer results when an older request finishes last", async () => {
+            await enterQuery("Lon");
+            await enterQuery("Tok");
+            await resolveSearch("Tok", "Tokyo, Japan");
+            expect(container.textContent).toContain("Tokyo, Japan");
+
+            await resolveSearch("Lon", "London, UK");
+            expect(container.textContent).toContain("Tokyo, Japan");
+            expect(container.textContent).not.toContain("London, UK");
+        });
+
+        it("clears loading and ignores a response after the query is cleared", async () => {
+            await enterQuery("Lon");
+            expect(container.querySelector(".animate-spin")).not.toBeNull();
+
+            await enterQuery("");
+            expect(container.querySelector(".animate-spin")).toBeNull();
+            await resolveSearch("Lon", "London, UK");
+            expect(container.textContent).not.toContain("London, UK");
         });
     });
     describe("SupportPane", () => {
