@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import SearchBar from "./SearchBar";
 import Greeting from "./Greeting";
 import MailWidget from "./MailWidget";
+import WeatherWidget from "./WeatherWidget";
 import SupportPane from "../settings/SupportPane";
 import GeneralPane from "../settings/GeneralPane";
 import { settings } from "@/utils/settings";
@@ -99,6 +100,95 @@ describe("Widgets & UI Components", () => {
                 root.render(<MailWidget />);
             });
             expect(container.querySelector("a")).toBeNull();
+        });
+    });
+    describe("WeatherWidget refreshes", () => {
+        const weatherKeys = ["settings-weather", "weather-mode", "weather-manual-location", "weather-cached-data", "weather-location-granted"];
+        let savedSettings: string[];
+        let permission: EventTarget & { state: PermissionState };
+        const queryPermission = vi.fn();
+        const getCurrentPosition = vi.fn<(success: PositionCallback) => void>();
+        const fetchForecast = vi.fn();
+
+        beforeEach(() => {
+            vi.useFakeTimers();
+            savedSettings = weatherKeys.map((key) => settings.get(key));
+            weatherKeys.forEach((key) => settings.remove(key));
+            permission = Object.assign(new EventTarget(), { state: "granted" as PermissionState });
+            queryPermission.mockReset().mockResolvedValue(permission);
+            getCurrentPosition.mockReset();
+            fetchForecast.mockReset().mockResolvedValue({ json: async () => ({}) });
+            vi.stubGlobal("navigator", {
+                permissions: { query: queryPermission },
+                geolocation: { getCurrentPosition },
+            });
+            vi.stubGlobal("fetch", fetchForecast);
+            vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+            vi.spyOn(weather, "reverseGeocode").mockResolvedValue("Test city");
+        });
+
+        afterEach(async () => {
+            await act(async () => {
+                weatherKeys.forEach((key, index) => {
+                    if (savedSettings[index])
+                        settings.set(key, savedSettings[index]);
+                    else
+                        settings.remove(key);
+                });
+            });
+            vi.restoreAllMocks();
+            vi.unstubAllGlobals();
+            vi.clearAllTimers();
+            vi.useRealTimers();
+        });
+
+        async function renderWeather(enabled: boolean) {
+            await act(async () => {
+                settings.set("settings-weather", String(enabled));
+                root.render(<WeatherWidget />);
+            });
+        }
+
+        async function resolvePosition(requestIndex: number) {
+            const [success] = getCurrentPosition.mock.calls[requestIndex];
+            await act(async () => success({ coords: { latitude: 1, longitude: 2 } } as GeolocationPosition));
+        }
+
+        it("does not check permission or request weather on disabled startup", async () => {
+            await renderWeather(false);
+            expect(queryPermission).not.toHaveBeenCalled();
+            expect(getCurrentPosition).not.toHaveBeenCalled();
+            expect(fetchForecast).not.toHaveBeenCalled();
+        });
+
+        it("ignores a pending position after disabling and refreshes when re-enabled", async () => {
+            await renderWeather(true);
+            expect(getCurrentPosition).toHaveBeenCalledOnce();
+            await act(async () => settings.set("settings-weather", "false"));
+            await resolvePosition(0);
+            expect(fetchForecast).not.toHaveBeenCalled();
+            expect(weather.reverseGeocode).not.toHaveBeenCalled();
+
+            await act(async () => settings.set("settings-weather", "true"));
+            expect(getCurrentPosition).toHaveBeenCalledTimes(2);
+            await resolvePosition(1);
+            expect(fetchForecast).toHaveBeenCalledOnce();
+        });
+
+        it("ignores focus, visibility, interval, and permission changes after disabling", async () => {
+            permission.state = "prompt";
+            await renderWeather(true);
+            expect(queryPermission).toHaveBeenCalledOnce();
+            await act(async () => settings.set("settings-weather", "false"));
+            await act(async () => {
+                window.dispatchEvent(new Event("focus"));
+                document.dispatchEvent(new Event("visibilitychange"));
+                permission.state = "granted";
+                permission.dispatchEvent(new Event("change"));
+                await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
+            });
+            expect(getCurrentPosition).not.toHaveBeenCalled();
+            expect(fetchForecast).not.toHaveBeenCalled();
         });
     });
     describe("GeneralPane city search", () => {

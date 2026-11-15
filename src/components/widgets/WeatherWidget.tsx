@@ -187,6 +187,7 @@ export default function WeatherWidget() {
     }[]>([]);
     const weatherRef = useRef<WeatherData | null>(weather);
     const isMountedRef = useRef<boolean>(true);
+    const refreshGeneration = useRef(0);
     const containerRef = useRef<HTMLDivElement | null>(null);
     useEffect(() => {
         weatherRef.current = weather;
@@ -198,6 +199,13 @@ export default function WeatherWidget() {
         };
     }, []);
     const loadWeather = useCallback(async () => {
+        const generation = refreshGeneration.current;
+        const canRefresh = () => isMountedRef.current &&
+            generation === refreshGeneration.current &&
+            settings.get("settings-weather") !== "false";
+        if (!canRefresh())
+            return;
+
         try {
             const mode = settings.get("weather-mode") || "auto";
             const manualLoc = getManualLocation();
@@ -218,6 +226,8 @@ export default function WeatherWidget() {
                             maximumAge: 600000,
                         });
                     });
+                    if (!canRefresh())
+                        return;
                     latitude = position.coords.latitude;
                     longitude = position.coords.longitude;
                     settings.set("weather-location-granted", "true");
@@ -238,7 +248,7 @@ export default function WeatherWidget() {
                 longitude = manualLoc.lon;
                 locName = manualLoc.name;
             }
-            if (latitude === null || longitude === null)
+            if (!canRefresh() || latitude === null || longitude === null)
                 return;
             const params = new URLSearchParams({
                 latitude: latitude.toString(),
@@ -253,7 +263,7 @@ export default function WeatherWidget() {
                 fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`).then((r) => r.json()),
                 locName ? Promise.resolve(locName) : reverseGeocode(latitude, longitude),
             ]);
-            if (isMountedRef.current && weatherRes?.current) {
+            if (canRefresh() && weatherRes?.current) {
                 const nextWeather: WeatherData = {
                     current: {
                         temperature: Math.round(weatherRes.current.temperature_2m),
@@ -283,7 +293,7 @@ export default function WeatherWidget() {
             }
         }
         catch (error) {
-            if (error && typeof error === "object" && "code" in error && error.code === 1) {
+            if (canRefresh() && error && typeof error === "object" && "code" in error && error.code === 1) {
                 settings.set("weather-location-granted", "false");
             }
         }
@@ -293,7 +303,7 @@ export default function WeatherWidget() {
         let permissionStatus: PermissionStatus | null = null;
         const savedEnabled = settings.get("settings-weather") !== "false";
         const handlePermissionChange = () => {
-            if (permissionStatus && active) {
+            if (permissionStatus && active && settings.get("settings-weather") !== "false") {
                 if (permissionStatus.state === "granted") {
                     loadWeather();
                 }
@@ -328,6 +338,8 @@ export default function WeatherWidget() {
             try {
                 if (navigator.permissions && navigator.permissions.query) {
                     const status = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+                    if (!active)
+                        return;
                     permissionStatus = status;
                     if (status.state === "granted") {
                         shouldLoad = true;
@@ -378,6 +390,8 @@ export default function WeatherWidget() {
             setEnabled(newEnabled);
             if (newEnabled)
                 loadWeather();
+            else
+                refreshGeneration.current++;
         };
         const handleTempUnitUpdate = () => {
             setTempUnit((settings.get("temp-unit") || "celsius") as "celsius" | "fahrenheit");
@@ -398,6 +412,7 @@ export default function WeatherWidget() {
         });
         return () => {
             active = false;
+            refreshGeneration.current++;
             unsubscribe();
             clearInterval(intervalTimer);
             document.removeEventListener("visibilitychange", handleVisibilityChange);
