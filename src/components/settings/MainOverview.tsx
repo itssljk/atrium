@@ -77,12 +77,12 @@ export default function MainOverview({ appearance, background, search, quicklink
 
       <div className="flex flex-col gap-1 rounded-2xl bg-[var(--foreground)]/3 border border-[var(--glass-border)]/40 p-1.5 overflow-hidden">
 
-        <div onClick={() => onNavigate("background")} className="group/navrow flex items-center justify-between p-3 rounded-xl hover:bg-[var(--foreground)]/6 active:scale-[0.98] cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)]/40 flex items-center justify-center text-[var(--accent)] shrink-0 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:scale-110">
+        <button type="button" onClick={() => onNavigate("background")} className="group/navrow text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--accent)] flex items-center justify-between p-3 rounded-xl hover:bg-[var(--foreground)]/6 active:scale-[0.98] cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
+          <span className="flex items-center gap-3 min-w-0">
+            <span className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)]/40 flex items-center justify-center text-[var(--accent)] shrink-0 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:scale-110">
               <ImageIcon className="w-4 h-4"/>
-            </div>
-            <div className="flex flex-col min-w-0">
+            </span>
+            <span className="flex flex-col min-w-0">
               <span className="text-xs font-semibold text-[var(--foreground)] group-hover/navrow:text-[var(--accent)] transition-colors duration-200">Wallpaper & Background</span>
               <span className="text-[10px] text-[var(--foreground)]/45 truncate">
                 {background.bgType === "default" && "Atrium Cosmic Gradient"}
@@ -91,36 +91,36 @@ export default function MainOverview({ appearance, background, search, quicklink
                 {background.bgType === "upload" && "Custom Uploaded Wallpaper"}
                 {background.bgType === "url" && "Pasted Image Address"}
               </span>
-            </div>
-          </div>
+            </span>
+          </span>
           <ChevronRight className="w-4 h-4 text-[var(--foreground)]/35 shrink-0 transition-all duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:translate-x-1 group-hover/navrow:text-[var(--accent)]"/>
-        </div>
+        </button>
 
         <div className="h-[1px] bg-[var(--divider)] mx-3"/>
 
-        <div onClick={() => onNavigate("search")} className="group/navrow flex items-center justify-between p-3 rounded-xl hover:bg-[var(--foreground)]/6 active:scale-[0.98] cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)]/40 flex items-center justify-center text-[var(--accent)] shrink-0 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:scale-110">
+        <button type="button" onClick={() => onNavigate("search")} className="group/navrow text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--accent)] flex items-center justify-between p-3 rounded-xl hover:bg-[var(--foreground)]/6 active:scale-[0.98] cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
+          <span className="flex items-center gap-3 min-w-0">
+            <span className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)]/40 flex items-center justify-center text-[var(--accent)] shrink-0 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:scale-110">
               <Globe className="w-4 h-4"/>
-            </div>
-            <div className="flex flex-col min-w-0">
+            </span>
+            <span className="flex flex-col min-w-0">
               <span className="text-xs font-semibold text-[var(--foreground)] group-hover/navrow:text-[var(--accent)] transition-colors duration-200">Search Engine & Bangs</span>
               <span className="text-[10px] text-[var(--foreground)]/45 truncate">
                 Active: {search.searchEngineId} &middot; {search.customEngines.length} custom
               </span>
-            </div>
-          </div>
+            </span>
+          </span>
           <ChevronRight className="w-4 h-4 text-[var(--foreground)]/35 shrink-0 transition-all duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:translate-x-1 group-hover/navrow:text-[var(--accent)]"/>
-        </div>
+        </button>
 
         <div className="h-[1px] bg-[var(--divider)] mx-3"/>
 
-        <div onClick={() => onNavigate("quicklinks")} className="group/navrow flex items-center justify-between p-3 rounded-xl hover:bg-[var(--foreground)]/6 active:scale-[0.98] cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)]/40 flex items-center justify-center text-[var(--accent)] shrink-0 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:scale-110">
+        <button type="button" onClick={() => onNavigate("quicklinks")} className="group/navrow text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--accent)] flex items-center justify-between p-3 rounded-xl hover:bg-[var(--foreground)]/6 active:scale-[0.98] cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
+          <span className="flex items-center gap-3 min-w-0">
+            <span className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)]/40 flex items-center justify-center text-[var(--accent)] shrink-0 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:scale-110">
               <LayoutGrid className="w-4 h-4"/>
-            </div>
-            <div className="flex flex-col min-w-0">
+            </span>
+            <span className="flex flex-col min-w-0">
               <span className="text-xs font-semibold text-[var(--foreground)] group-hover/navrow:text-[var(--accent)] transition-colors duration-200">Shortcuts Bar</span>
               <span className="text-[10px] text-[var(--foreground)]/45 truncate">
                 {quicklinksManager.showQuicklinks
@@ -131,36 +131,36 @@ export default function MainOverview({ appearance, background, search, quicklink
                     : "Fluid Pills"}`
             : "Disabled"}
               </span>
-            </div>
-          </div>
+            </span>
+          </span>
           <ChevronRight className="w-4 h-4 text-[var(--foreground)]/35 shrink-0 transition-all duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:translate-x-1 group-hover/navrow:text-[var(--accent)]"/>
-        </div>
+        </button>
 
         <div className="h-[1px] bg-[var(--divider)] mx-3"/>
 
-        <div onClick={() => onNavigate("layout")} className="group/navrow flex items-center justify-between p-3 rounded-xl hover:bg-[var(--foreground)]/6 active:scale-[0.98] cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)]/40 flex items-center justify-center text-[var(--accent)] shrink-0 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:scale-110">
+        <button type="button" onClick={() => onNavigate("layout")} className="group/navrow text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--accent)] flex items-center justify-between p-3 rounded-xl hover:bg-[var(--foreground)]/6 active:scale-[0.98] cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
+          <span className="flex items-center gap-3 min-w-0">
+            <span className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)]/40 flex items-center justify-center text-[var(--accent)] shrink-0 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:scale-110">
               <LayoutTemplate className="w-4 h-4"/>
-            </div>
-            <div className="flex flex-col min-w-0">
+            </span>
+            <span className="flex flex-col min-w-0">
               <span className="text-xs font-semibold text-[var(--foreground)] group-hover/navrow:text-[var(--accent)] transition-colors duration-200">Interface & Layout</span>
               <span className="text-[10px] text-[var(--foreground)]/45 truncate">
                 Search bar ({search.searchBarStyle === "solid" ? "Solid" : "Glassy"}{search.searchBarColor !== "default" ? ` · ${search.searchBarColor}` : ""}, {search.searchBarShape}) & layout
               </span>
-            </div>
-          </div>
+            </span>
+          </span>
           <ChevronRight className="w-4 h-4 text-[var(--foreground)]/35 shrink-0 transition-all duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:translate-x-1 group-hover/navrow:text-[var(--accent)]"/>
-        </div>
+        </button>
 
         <div className="h-[1px] bg-[var(--divider)] mx-3"/>
 
-        <div onClick={() => onNavigate("general")} className="group/navrow flex items-center justify-between p-3 rounded-xl hover:bg-[var(--foreground)]/6 active:scale-[0.98] cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)]/40 flex items-center justify-center text-[var(--accent)] shrink-0 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:scale-110">
+        <button type="button" onClick={() => onNavigate("general")} className="group/navrow text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--accent)] flex items-center justify-between p-3 rounded-xl hover:bg-[var(--foreground)]/6 active:scale-[0.98] cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
+          <span className="flex items-center gap-3 min-w-0">
+            <span className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)]/40 flex items-center justify-center text-[var(--accent)] shrink-0 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:scale-110">
               <CloudSun className="w-4 h-4"/>
-            </div>
-            <div className="flex flex-col min-w-0">
+            </span>
+            <span className="flex flex-col min-w-0">
               <span className="text-xs font-semibold text-[var(--foreground)] group-hover/navrow:text-[var(--accent)] transition-colors duration-200">General & Personalization</span>
               <span className="text-[10px] text-[var(--foreground)]/45 truncate">
                 {general.showGreeting
@@ -171,27 +171,27 @@ export default function MainOverview({ appearance, background, search, quicklink
                     : "Greeting card, weather & mail"
             : "Weather & mail (greeting off)"}
               </span>
-            </div>
-          </div>
+            </span>
+          </span>
           <ChevronRight className="w-4 h-4 text-[var(--foreground)]/35 shrink-0 transition-all duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:translate-x-1 group-hover/navrow:text-[var(--accent)]"/>
-        </div>
+        </button>
 
         <div className="h-[1px] bg-[var(--divider)] mx-3"/>
 
-        <div onClick={() => onNavigate("support")} className="group/navrow flex items-center justify-between p-3 rounded-xl hover:bg-[var(--foreground)]/6 active:scale-[0.98] cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)]/40 flex items-center justify-center text-[var(--accent)] shrink-0 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:scale-110">
+        <button type="button" onClick={() => onNavigate("support")} className="group/navrow text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--accent)] flex items-center justify-between p-3 rounded-xl hover:bg-[var(--foreground)]/6 active:scale-[0.98] cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
+          <span className="flex items-center gap-3 min-w-0">
+            <span className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)]/40 flex items-center justify-center text-[var(--accent)] shrink-0 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:scale-110">
               <MessageSquare className="w-4 h-4"/>
-            </div>
-            <div className="flex flex-col min-w-0">
+            </span>
+            <span className="flex flex-col min-w-0">
               <span className="text-xs font-semibold text-[var(--foreground)] group-hover/navrow:text-[var(--accent)] transition-colors duration-200">Support & About</span>
               <span className="text-[10px] text-[var(--foreground)]/45 truncate">
                 v{siteConfig.version} &middot; Discord, feedback, terms
               </span>
-            </div>
-          </div>
+            </span>
+          </span>
           <ChevronRight className="w-4 h-4 text-[var(--foreground)]/35 shrink-0 transition-all duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/navrow:translate-x-1 group-hover/navrow:text-[var(--accent)]"/>
-        </div>
+        </button>
       </div>
 
       <div className="flex flex-col gap-1 rounded-2xl bg-[var(--foreground)]/3 border border-[var(--glass-border)]/40 p-3.5">

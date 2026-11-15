@@ -172,7 +172,7 @@ export default function SearchBar() {
             setShowSuggestions(false);
             setActiveIndex(-1);
         }
-        openSettingsDrawer("search");
+        openSettingsDrawer("search", triggerRef.current ?? undefined);
     }, [showSuggestions]);
     useEffect(() => {
         setIsMounted(true);
