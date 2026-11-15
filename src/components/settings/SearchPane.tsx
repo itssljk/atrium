@@ -7,6 +7,7 @@ import { CUSTOM_ENGINE_MAX, CUSTOM_BANGS_MAX, type CustomEngine, type CustomBang
 import type { SearchManager } from "./types";
 interface SearchPaneProps {
     search: SearchManager;
+    drawerOpen: boolean;
 }
 function PrivacyIcon({ level }: {
     level?: string;
@@ -30,7 +31,7 @@ function renderPrivacyTag(level?: string, label?: string, detail?: string) {
       <PrivacyIcon level={level}/>
     </span>);
 }
-export default function SearchPane({ search }: SearchPaneProps) {
+export default function SearchPane({ search, drawerOpen }: SearchPaneProps) {
     const [isViewingDirectory, setIsViewingDirectory] = useState(false);
     const [directoryFilter, setDirectoryFilter] = useState("");
     const directoryFilterInputRef = useRef<HTMLInputElement>(null);
@@ -40,7 +41,7 @@ export default function SearchPane({ search }: SearchPaneProps) {
         setTimeout(() => directoryFilterInputRef.current?.focus(), 50);
     };
     useEffect(() => {
-        if (!isViewingDirectory)
+        if (!drawerOpen || !isViewingDirectory)
             return;
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
@@ -49,7 +50,7 @@ export default function SearchPane({ search }: SearchPaneProps) {
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, [isViewingDirectory]);
+    }, [drawerOpen, isViewingDirectory]);
     const builtInBangs = useMemo(() => {
         const list: Array<{
             bang: string;
@@ -339,7 +340,7 @@ export default function SearchPane({ search }: SearchPaneProps) {
         </div>
       </div>
 
-      {isEditingBang && typeof document !== "undefined" && createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-fade-in">
+      {isEditingBang && drawerOpen && typeof document !== "undefined" && createPortal(<div data-preferences-search-dialog className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-fade-in">
           <div className="w-full max-w-sm rounded-2xl glass-input p-6 flex flex-col gap-4 animate-scale-up text-left relative">
             <button type="button" onClick={() => setIsEditingBang(false)} className="absolute top-4 right-4 p-1.5 rounded-lg text-[var(--foreground)]/50 hover:text-[var(--foreground)]/80 cursor-pointer active:scale-90">
               <X className="w-4 h-4"/>
@@ -383,7 +384,7 @@ export default function SearchPane({ search }: SearchPaneProps) {
           </div>
         </div>, document.body)}
 
-      {isEditingEngine && typeof document !== "undefined" && createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-fade-in">
+      {isEditingEngine && drawerOpen && typeof document !== "undefined" && createPortal(<div data-preferences-search-dialog className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-fade-in">
           <div className="w-full max-w-sm rounded-2xl glass-input p-6 flex flex-col gap-4 animate-scale-up text-left relative">
             <button type="button" onClick={() => setIsEditingEngine(false)} className="absolute top-4 right-4 p-1.5 rounded-lg text-[var(--foreground)]/50 hover:text-[var(--foreground)]/80 cursor-pointer active:scale-90">
               <X className="w-4 h-4"/>
@@ -417,7 +418,7 @@ export default function SearchPane({ search }: SearchPaneProps) {
           </div>
         </div>, document.body)}
 
-      {isViewingDirectory && typeof document !== "undefined" && createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md animate-fade-in" onClick={(e) => {
+      {isViewingDirectory && drawerOpen && typeof document !== "undefined" && createPortal(<div data-preferences-search-dialog className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md animate-fade-in" onClick={(e) => {
                 if (e.target === e.currentTarget)
                     setIsViewingDirectory(false);
             }}>

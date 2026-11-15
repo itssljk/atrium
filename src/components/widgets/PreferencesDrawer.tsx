@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { X, ChevronLeft } from "lucide-react";
 import SettingsSearch from "@/components/widgets/SettingsSearch";
 import MainOverview from "@/components/settings/MainOverview";
@@ -23,7 +23,12 @@ interface PreferencesDrawerProps {
     setActivePane: (pane: SettingsPane) => void;
     close: () => void;
 }
+const tabStopSelector = "a[href], button, input, select, textarea, [tabindex], [contenteditable=true]";
+
 export default function PreferencesDrawer({ isOpen, activePane, setActivePane, close, }: PreferencesDrawerProps) {
+    const titleId = useId();
+    const titleRef = useRef<HTMLHeadingElement>(null);
+    const drawerRef = useRef<HTMLDivElement>(null);
     const mainPaneRef = useRef<HTMLDivElement>(null);
     const subPaneRef = useRef<HTMLDivElement>(null);
     const [displayedSubpane, setDisplayedSubpane] = useState<SettingsPane>("background");
@@ -41,11 +46,34 @@ export default function PreferencesDrawer({ isOpen, activePane, setActivePane, c
     const quicklinksManager = useQuicklinksManager();
     const general = useGeneralManager();
     const [showCustomPicker, setShowCustomPicker] = useState(false);
+    useLayoutEffect(() => {
+        if (isOpen)
+            titleRef.current?.focus({ preventScroll: true });
+    }, [isOpen, activePane]);
     useEffect(() => {
         if (!isOpen)
             return;
         const handleKey = (e: KeyboardEvent) => {
+            const searchDialog = document.querySelector("[data-preferences-search-dialog]");
+            if (e.key === "Tab") {
+                const scope = searchDialog ?? drawerRef.current;
+                if (!scope)
+                    return;
+                const stops = Array.from(scope.querySelectorAll<HTMLElement>(tabStopSelector))
+                    .filter((element) => element.tabIndex >= 0 && !element.matches(":disabled") &&
+                        !element.closest("[inert]") && element.getClientRects().length > 0 &&
+                        getComputedStyle(element).visibility === "visible");
+                const boundary = e.shiftKey ? stops[0] : stops.at(-1);
+                if (document.activeElement === boundary || !stops.some((stop) => stop === document.activeElement)) {
+                    e.preventDefault();
+                    const next = e.shiftKey ? stops.at(-1) : stops[0];
+                    (next ?? titleRef.current)?.focus();
+                }
+                return;
+            }
             if (e.key === "Escape") {
+                if (searchDialog)
+                    return;
                 if (settingsQuery.trim()) {
                     setSettingsQuery("");
                     return;
@@ -118,16 +146,16 @@ export default function PreferencesDrawer({ isOpen, activePane, setActivePane, c
     const isSubpaneActive = activePane !== "main";
     const activeSubpaneType = activePane !== "main" ? activePane : displayedSubpane;
     const currentMeta = PANE_TITLES[activeSubpaneType] || PANE_TITLES.main;
-    return (<div className="w-full h-full flex flex-col justify-between relative overflow-hidden">
+    return (<div ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="w-full h-full flex flex-col justify-between relative overflow-hidden">
 
       <div className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 border-b border-[var(--divider)] flex items-center justify-between shrink-0 select-none z-20 backdrop-blur-md bg-[var(--glass-bg)]/40 pt-[max(1rem,var(--safe-area-top))] sm:pt-5">
         <div className="flex items-center gap-2 min-w-0">
-          <button onClick={() => setActivePane("main")} className={`flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:opacity-80 active:scale-90 hover:-translate-x-0.5 transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${isSubpaneActive ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-3 pointer-events-none absolute"}`}>
+          <button inert={!isSubpaneActive} onClick={() => setActivePane("main")} className={`flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:opacity-80 active:scale-90 hover:-translate-x-0.5 transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${isSubpaneActive ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-3 pointer-events-none absolute"}`}>
             <ChevronLeft className="w-4 h-4"/> Preferences
           </button>
 
           <div className={`flex flex-col transition-all duration-400 ease-[cubic-bezier(0.32,0.72,0,1)] ${isSubpaneActive ? "translate-x-2" : "translate-x-0"}`}>
-            <h2 className="text-base font-semibold tracking-tight text-[var(--foreground)] leading-tight">
+            <h2 ref={titleRef} id={titleId} tabIndex={-1} className="text-base font-semibold tracking-tight text-[var(--foreground)] leading-tight">
               {isSubpaneActive ? currentMeta.title : "Preferences"}
             </h2>
             <p className="text-[10px] tracking-wider text-[var(--foreground)]/45 uppercase font-medium mt-0.5">
@@ -144,7 +172,7 @@ export default function PreferencesDrawer({ isOpen, activePane, setActivePane, c
       <div className="flex-1 w-full overflow-hidden relative">
         <div className="flex w-[200%] h-full transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform" style={{ transform: isSubpaneActive ? "translateX(-50%)" : "translateX(0)" }}>
 
-          <div ref={mainPaneRef} className="w-1/2 h-full overflow-y-auto px-4 sm:px-6 py-5 pb-[max(1.25rem,var(--safe-area-bottom))] custom-scrollbar flex flex-col justify-between">
+          <div ref={mainPaneRef} inert={isSubpaneActive} className="w-1/2 h-full overflow-y-auto px-4 sm:px-6 py-5 pb-[max(1.25rem,var(--safe-area-bottom))] custom-scrollbar flex flex-col justify-between">
             <div className="flex flex-col gap-5">
 
               <SettingsSearch query={settingsQuery} onQueryChange={setSettingsQuery} onSelect={selectSetting} appearance={appearance} background={background} search={search} quicklinks={quicklinksManager} general={general}/>
@@ -152,11 +180,11 @@ export default function PreferencesDrawer({ isOpen, activePane, setActivePane, c
             </div>
           </div>
 
-          <div ref={subPaneRef} className="w-1/2 h-full overflow-y-auto px-4 sm:px-6 py-5 pb-[max(1.25rem,var(--safe-area-bottom))] custom-scrollbar">
+          <div ref={subPaneRef} inert={!isSubpaneActive} className="w-1/2 h-full overflow-y-auto px-4 sm:px-6 py-5 pb-[max(1.25rem,var(--safe-area-bottom))] custom-scrollbar">
 
             {activeSubpaneType === "background" && (<BackgroundPane background={background} appearance={appearance}/>)}
 
-            {activeSubpaneType === "search" && <SearchPane search={search}/>}
+            {activeSubpaneType === "search" && <SearchPane search={search} drawerOpen={isOpen && isSubpaneActive}/>}
 
             {activeSubpaneType === "quicklinks" && <QuicklinksPane quicklinksManager={quicklinksManager}/>}
 
