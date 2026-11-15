@@ -103,9 +103,10 @@ export default function SearchBar() {
             }
             return;
         }
-        if (trimmed.startsWith("!")) {
+        if (trimmed.startsWith("!") || detectedBang?.isTrailing) {
             setSuggestions([]);
             setShowSuggestions(false);
+            setActiveIndex(-1);
             return;
         }
         if (!trimmed || trimmed.length < 2) {
@@ -142,7 +143,7 @@ export default function SearchBar() {
             if (suggestTimer.current)
                 clearTimeout(suggestTimer.current);
         };
-    }, [query, activeEngine, isMounted]);
+    }, [query, activeEngine, isMounted, detectedBang, customBangs, deletedBangs]);
     const selectSuggestion = (item: SuggestionItem) => {
         if (item.type === "bang") {
             setQuery(`${item.bang} `);

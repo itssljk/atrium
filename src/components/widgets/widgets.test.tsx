@@ -11,6 +11,7 @@ import GeneralPane from "../settings/GeneralPane";
 import { settings } from "@/utils/settings";
 import { useGeneralManager } from "@/utils/useGeneralManager";
 import * as weather from "@/utils/weather";
+import * as searchEngines from "@/config/searchEngines";
 (globalThis as {
     IS_REACT_ACT_ENVIRONMENT?: boolean;
 }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -49,6 +50,65 @@ describe("Widgets & UI Components", () => {
                 input.dispatchEvent(new Event("input", { bubbles: true }));
             });
             expect(input.value).toBe("vite js");
+        });
+    });
+    describe("SearchBar bang suggestions", () => {
+        let fetchSuggestions: MockInstance<typeof searchEngines.fetchSuggestionsForEngine>;
+
+        beforeEach(async () => {
+            vi.useFakeTimers();
+            vi.spyOn(searchEngines, "supportsRemoteSuggestions").mockReturnValue(true);
+            fetchSuggestions = vi.spyOn(searchEngines, "fetchSuggestionsForEngine");
+            await act(async () => root.render(<SearchBar />));
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+            vi.clearAllTimers();
+            vi.useRealTimers();
+        });
+
+        async function enterQuery(query: string) {
+            const input = container.querySelector("input")!;
+            const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+            await act(async () => {
+                setValue.call(input, query);
+                input.dispatchEvent(new Event("input", { bubbles: true }));
+            });
+            await act(async () => vi.advanceTimersByTimeAsync(250));
+        }
+
+        it("clears engine suggestions when a trailing bang routes the query", async () => {
+            fetchSuggestions.mockResolvedValue(["react tutorial"]);
+            await enterQuery("react");
+            expect(fetchSuggestions).toHaveBeenCalledWith(expect.objectContaining({ id: searchEngines.DEFAULT_WEB_ENGINE_ID }), "react");
+            expect(container.textContent).toContain("react tutorial");
+
+            await enterQuery("react !gh");
+            expect(container.querySelector("input")?.placeholder).toBe("Search GitHub...");
+            expect(container.textContent).not.toContain("react tutorial");
+            expect(fetchSuggestions).toHaveBeenCalledOnce();
+        });
+
+        it("ignores a pending engine response after entering a trailing bang", async () => {
+            let resolveSuggestions!: (suggestions: string[]) => void;
+            fetchSuggestions.mockImplementation(() => new Promise((resolve) => {
+                resolveSuggestions = resolve;
+            }));
+            await enterQuery("react");
+            await enterQuery("react !gh");
+            expect(fetchSuggestions).toHaveBeenCalledOnce();
+            await act(async () => resolveSuggestions(["late suggestion"]));
+            expect(container.textContent).not.toContain("late suggestion");
+        });
+
+        it("keeps leading bang suggestions local", async () => {
+            await enterQuery("!gh");
+            expect(container.textContent).toContain("GitHub");
+            expect(fetchSuggestions).not.toHaveBeenCalled();
+            await enterQuery("!gh react");
+            expect(container.querySelector("input")?.placeholder).toBe("Search GitHub...");
+            expect(fetchSuggestions).not.toHaveBeenCalled();
         });
     });
     describe("Greeting", () => {
