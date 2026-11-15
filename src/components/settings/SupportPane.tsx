@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MessageSquare, Scale, ShieldCheck, PenLine, Archive, Download, Upload, RotateCcw } from "lucide-react";
 import Link from "@/components/core/Link";
 import { siteConfig } from "@/config/site";
@@ -13,11 +13,24 @@ const exploreFeatures = [
 ] as const;
 
 export default function SupportPane({ onNavigate }: { onNavigate: (pane: SettingsPane) => void }) {
-    const [copiedInvite, setCopiedInvite] = useState(false);
-    const handleCopyInvite = () => {
-        navigator.clipboard.writeText(siteConfig.links.discord);
-        setCopiedInvite(true);
-        setTimeout(() => setCopiedInvite(false), 2000);
+    const [copyStatus, setCopyStatus] = useState<"copying" | "success" | "failure" | null>(null);
+    useEffect(() => {
+        if (copyStatus !== "success" && copyStatus !== "failure")
+            return;
+        const timeout = setTimeout(() => setCopyStatus(null), 3000);
+        return () => clearTimeout(timeout);
+    }, [copyStatus]);
+    const handleCopyInvite = async () => {
+        if (copyStatus === "copying")
+            return;
+        setCopyStatus("copying");
+        try {
+            await navigator.clipboard.writeText(siteConfig.links.discord);
+            setCopyStatus("success");
+        }
+        catch {
+            setCopyStatus("failure");
+        }
     };
     const [importStatus, setImportStatus] = useState<{
         success?: boolean;
@@ -111,10 +124,14 @@ export default function SupportPane({ onNavigate }: { onNavigate: (pane: Setting
             Join Server
           </a>
         </div>
-        <div className="flex items-center gap-2 pt-2 border-t border-[var(--divider)]">
-          <button onClick={handleCopyInvite} className="text-xs text-[var(--accent)] hover:underline cursor-pointer font-medium active:scale-95 transition-transform duration-200">
-            {copiedInvite ? "✓ Link Copied!" : "Copy Discord Invite Link"}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--divider)]">
+          <button type="button" onClick={handleCopyInvite} aria-disabled={copyStatus === "copying"} className="text-xs text-[var(--accent)] hover:underline cursor-pointer font-medium active:scale-95 transition-transform duration-200">
+            Copy Discord Invite Link
           </button>
+          <span role="status" className="text-xs text-[var(--foreground)]/80">
+            {copyStatus === "success" && "Link Copied!"}
+            {copyStatus === "failure" && "Couldn’t copy the invite. Use Join Server to open it."}
+          </span>
         </div>
       </div>
 
