@@ -53,6 +53,10 @@ export default function Quicklinks() {
     }, [links]);
     useEffect(() => {
         setMounted(true);
+    }, []);
+    useEffect(() => {
+        if (!showQuicklinks)
+            return;
         const handleKeyDown = (e: KeyboardEvent) => {
             if (modalRef.current?.open)
                 return;
@@ -76,7 +80,7 @@ export default function Quicklinks() {
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, []);
+    }, [showQuicklinks]);
     const openAddModal = (e: React.MouseEvent<HTMLButtonElement>) => {
         openerRef.current = e.currentTarget;
         setEditingLink(null);

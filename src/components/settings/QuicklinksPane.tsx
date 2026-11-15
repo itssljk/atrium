@@ -149,10 +149,10 @@ export default function QuicklinksPane({ quicklinksManager }: QuicklinksPaneProp
 
         <div className="flex items-center justify-between py-1 border-b border-[var(--divider)]">
           <div className="flex flex-col">
-            <span className="text-xs font-medium text-[var(--foreground)]/90">Number Shortcuts (1-9)</span>
-            <span className="text-[9px] text-[var(--foreground)]/45">Display numeric keyboard shortcuts</span>
+            <span className="text-xs font-medium text-[var(--foreground)]/90">Show Shortcut Numbers (1–9)</span>
+            <span className="text-[9px] text-[var(--foreground)]/45">Display key hints on shortcuts</span>
           </div>
-          <button role="switch" aria-checked={quicklinksManager.showKeycaps} aria-label="Number Shortcuts (1-9)" onClick={() => quicklinksManager.setShowKeycaps(!quicklinksManager.showKeycaps)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${quicklinksManager.showKeycaps ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
+          <button role="switch" aria-checked={quicklinksManager.showKeycaps} aria-label="Show Shortcut Numbers (1–9)" onClick={() => quicklinksManager.setShowKeycaps(!quicklinksManager.showKeycaps)} className={`relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 ${quicklinksManager.showKeycaps ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/20"}`}>
             <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-md liquid-switch-thumb ${quicklinksManager.showKeycaps ? "translate-x-5" : "translate-x-0"}`}/>
           </button>
         </div>

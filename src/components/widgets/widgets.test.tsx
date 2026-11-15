@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import SearchBar from "./SearchBar";
 import Greeting from "./Greeting";
 import MailWidget from "./MailWidget";
+import Quicklinks from "./Quicklinks";
 import SupportPane from "../settings/SupportPane";
 import GeneralPane from "../settings/GeneralPane";
 import { settings } from "@/utils/settings";
@@ -99,6 +100,63 @@ describe("Widgets & UI Components", () => {
                 root.render(<MailWidget />);
             });
             expect(container.querySelector("a")).toBeNull();
+        });
+    });
+    describe("Quicklinks number keys", () => {
+        const keys = ["settings-quicklinks", "settings-quicklinks-keycaps", "quicklinks"];
+        let previousSettings: (string | null)[];
+        let previousUrl: string;
+
+        beforeEach(async () => {
+            previousSettings = keys.map((key) => settings.get(key));
+            previousUrl = window.location.href;
+            window.history.replaceState(null, "", "#start");
+            settings.set("settings-quicklinks", "true");
+            settings.set("settings-quicklinks-keycaps", "false");
+            settings.set("quicklinks", JSON.stringify([{ id: "test", title: "Test shortcut", url: "#shortcut" }]));
+            await act(async () => root.render(<><input aria-label="Test input" /><Quicklinks /></>));
+        });
+
+        afterEach(async () => {
+            await act(async () => {
+                keys.forEach((key, index) => {
+                    const previous = previousSettings[index];
+                    if (previous === null)
+                        settings.remove(key);
+                    else
+                        settings.set(key, previous);
+                });
+            });
+            window.history.replaceState(null, "", previousUrl);
+        });
+
+        function pressKey(key: string, target: EventTarget = window) {
+            const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+            target.dispatchEvent(event);
+            return event.defaultPrevented;
+        }
+
+        it("opens a shortcut while the bar is enabled even with number hints hidden", () => {
+            expect(pressKey("1")).toBe(true);
+            expect(window.location.hash).toBe("#shortcut");
+        });
+
+        it("ignores shortcuts when the bar is disabled and resumes when re-enabled", async () => {
+            await act(async () => settings.set("settings-quicklinks", "false"));
+            expect(pressKey("1")).toBe(false);
+            expect(window.location.hash).toBe("#start");
+
+            await act(async () => settings.set("settings-quicklinks", "true"));
+            expect(pressKey("1")).toBe(true);
+            expect(window.location.hash).toBe("#shortcut");
+        });
+
+        it("ignores unrelated keys and digits typed in an input", () => {
+            expect(pressKey("a")).toBe(false);
+            const input = container.querySelector("input")!;
+            input.focus();
+            expect(pressKey("1", input)).toBe(false);
+            expect(window.location.hash).toBe("#start");
         });
     });
     describe("GeneralPane city search", () => {
