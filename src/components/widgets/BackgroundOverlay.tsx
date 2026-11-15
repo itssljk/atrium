@@ -3,7 +3,8 @@ import { useEffect, useState, useRef } from "react";
 import { getBackgroundBlob, DEFAULT_BG_SETTINGS } from "@/utils/backgroundDb";
 import { settings } from "@/utils/settings";
 import { fetchBingWallpaper, getCachedBingWallpaper } from "@/utils/bingWallpaper";
-import { analyzeImageBrightness } from "@/utils/colorExtractor";
+import { analyzeImageBrightness, type RGB } from "@/utils/colorExtractor";
+import { DEFAULT_WALLPAPER_TINT, getWallpaperTint } from "@/utils/wallpaperTint";
 interface Credits {
     name: string;
     url: string;
@@ -20,6 +21,7 @@ export default function BackgroundOverlay() {
     const [upperLuminance, setUpperLuminance] = useState<number>(0);
     const [dimTouched, setDimTouched] = useState<boolean>(false);
     const [credits, setCredits] = useState<Credits | null>(null);
+    const [wallpaperSample, setWallpaperSample] = useState<{ url: string; color: RGB } | null>(null);
     const objectUrlRef = useRef<string>("");
     const isMountedRef = useRef<boolean>(true);
     const requestCounterRef = useRef<number>(0);
@@ -92,6 +94,7 @@ export default function BackgroundOverlay() {
                                 return;
                             setIsBright(res.isBright);
                             setUpperLuminance(res.upperLuminance);
+                            setWallpaperSample(res.topColor ? { url: data.url, color: res.topColor } : null);
                             if (res.isBright) {
                                 document.documentElement.dataset.bgBright = "true";
                             }
@@ -141,6 +144,7 @@ export default function BackgroundOverlay() {
                         return;
                     setIsBright(res.isBright);
                     setUpperLuminance(res.upperLuminance);
+                    setWallpaperSample(res.topColor ? { url, color: res.topColor } : null);
                     if (res.isBright) {
                         document.documentElement.dataset.bgBright = "true";
                     }
@@ -187,8 +191,6 @@ export default function BackgroundOverlay() {
             }
         };
     }, []);
-    if (!mounted || bgType === "default" || !imageUrl)
-        return null;
     const ASSIST_START = 0.35;
     const ASSIST_FULL = 0.75;
     const ASSIST_CEILING = 70;
@@ -210,6 +212,25 @@ export default function BackgroundOverlay() {
         imageBrightness = 1 - (1 - BRIGHTNESS_FLOOR) * t;
     }
     const totalDim = Math.min(92, effectiveDim + veil);
+    const topOverlayOpacity = smartReadability ? (isBright ? 1 : 0.4) : 0;
+    const tint = mounted && bgType !== "default" && smartReadability && wallpaperSample?.url === imageUrl
+        ? getWallpaperTint(wallpaperSample.color, opacity, totalDim, imageBrightness, 0.35 * topOverlayOpacity)
+        : DEFAULT_WALLPAPER_TINT;
+    useEffect(() => {
+        if (tint === DEFAULT_WALLPAPER_TINT)
+            return;
+        const root = document.documentElement;
+        const themeColor = document.querySelector('meta[name="theme-color"]');
+        root.style.setProperty("--browser-tint", tint);
+        themeColor?.setAttribute("content", tint);
+        return () => {
+            root.style.removeProperty("--browser-tint");
+            themeColor?.setAttribute("content", DEFAULT_WALLPAPER_TINT);
+        };
+    }, [tint]);
+
+    if (!mounted || bgType === "default" || !imageUrl)
+        return null;
     const imageFilter = `${imageBrightness < 1 ? `brightness(${imageBrightness.toFixed(2)}) ` : ""}${blur > 0 ? `blur(${blur}px)` : "none"}`;
     return (<>
 
@@ -236,7 +257,7 @@ export default function BackgroundOverlay() {
         }}/>
 
       <div className="fixed inset-0 pointer-events-none -z-17 bg-gradient-to-b from-[#030307]/35 via-[#030307]/12 to-transparent" style={{
-            opacity: smartReadability ? (isBright ? 1 : 0.4) : 0,
+            opacity: topOverlayOpacity,
             transform: "translateZ(0)",
             transition: "opacity 0.5s ease-out",
         }}/>

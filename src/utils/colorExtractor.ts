@@ -278,10 +278,13 @@ export async function getActiveBackgroundAccent(): Promise<ExtractedAccent> {
     }
     return DEFAULT_AUTO_ACCENT;
 }
+export type RGB = readonly [number, number, number];
+
 export interface ImageBrightnessAnalysis {
     overallLuminance: number;
     upperLuminance: number;
     isBright: boolean;
+    topColor?: RGB;
 }
 export const DEFAULT_BRIGHTNESS: ImageBrightnessAnalysis = {
     overallLuminance: 0.2,
@@ -356,6 +359,8 @@ async function analyzeImageBrightnessUncached(imageSource: string | Blob): Promi
                 let totalCount = 0;
                 let upperLuminanceSum = 0;
                 let upperCount = 0;
+                const topColor: [number, number, number] = [0, 0, 0];
+                let topWeight = 0;
                 const halfHeight = Math.floor(size / 2);
                 for (let y = 0; y < size; y++) {
                     for (let x = 0; x < size; x++) {
@@ -364,6 +369,14 @@ async function analyzeImageBrightnessUncached(imageSource: string | Blob): Promi
                         const g = data[idx + 1];
                         const b = data[idx + 2];
                         const a = data[idx + 3];
+                        // Sample the upper center of the photo using the existing canvas read.
+                        if (y < size / 4 && x >= size / 4 && x < 3 * size / 4) {
+                            const weight = a / 255;
+                            topColor[0] += r * weight;
+                            topColor[1] += g * weight;
+                            topColor[2] += b * weight;
+                            topWeight += weight;
+                        }
                         if (a < 128)
                             continue;
                         const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
@@ -383,6 +396,9 @@ async function analyzeImageBrightnessUncached(imageSource: string | Blob): Promi
                     overallLuminance: overall,
                     upperLuminance: upper,
                     isBright,
+                    topColor: topWeight > 0
+                        ? [topColor[0] / topWeight, topColor[1] / topWeight, topColor[2] / topWeight]
+                        : undefined,
                 });
             }
             catch (err) {
