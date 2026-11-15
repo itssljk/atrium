@@ -39,7 +39,7 @@
 :root {
   
   --background: #030307;
-  background-color: var(--background);
+  background-color: var(--browser-tint, var(--background));
   --background-image: radial-gradient(circle at 50% 30%, #0a0b16 0%, #030307 100%);
   --foreground: #f8f9fc;
   --accent: #7ca38e;

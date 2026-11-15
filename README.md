@@ -16,7 +16,7 @@ A minimalist, dark-themed start page and new tab replacement for your browser, w
 - **Optimized custom backgrounds** with automatic client-side downscaling and WebP compression for instantaneous loading, plus Bing Daily Wallpaper, curated photography, uploads, pasted URLs, or web gallery. Includes opacity, blur, and dimming controls.
 - **Search autofocus & bangs** for instant typing on new tabs (`Ctrl+T`), search engine switching, and custom `!bangs`.
 
-Atrium advertises its dark base canvas as a browser theme-color hint. Safari controls the final tint, and a single static color cannot match custom wallpaper images.
+Atrium starts with a dark browser tint. With Smart Readability on, it reuses the wallpaper analysis to approximate the photo’s top color without requesting another image. The tint stays dark for the built-in gradient, when Smart Readability is off, or when an image can’t be sampled. Safari controls the final tint and may vary it by tab layout and browser settings.
 
 ## Tech Stack
 
