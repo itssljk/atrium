@@ -162,6 +162,49 @@ describe("Widgets & UI Components", () => {
         });
     });
     describe("SupportPane", () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+            vi.useRealTimers();
+        });
+
+        async function clickCopyInvite() {
+            await act(async () => root.render(<SupportPane onNavigate={() => {}} />));
+            const button = Array.from(container.querySelectorAll("button"))
+                .find((button) => button.textContent?.trim() === "Copy Discord Invite Link")!;
+            await act(async () => button.click());
+            return container.querySelector('[role="status"]')!;
+        }
+
+        it("announces success only after the clipboard write resolves and clears it", async () => {
+            vi.useFakeTimers();
+            let resolveCopy!: () => void;
+            const writeText = vi.fn(() => new Promise<void>((resolve) => {
+                resolveCopy = resolve;
+            }));
+            vi.stubGlobal("navigator", { clipboard: { writeText } });
+            const status = await clickCopyInvite();
+            expect(writeText).toHaveBeenCalledOnce();
+            expect(status.textContent).toBe("");
+
+            await act(async () => resolveCopy());
+            expect(status.textContent).toContain("Link Copied!");
+            await act(async () => vi.advanceTimersByTimeAsync(3000));
+            expect(status.textContent).toBe("");
+        });
+
+        it.each([
+            ["rejects", { writeText: () => Promise.reject(new Error("Clipboard denied")) }],
+            ["is unavailable", undefined],
+        ])("announces failure when the clipboard %s", async (_scenario, clipboard) => {
+            vi.useFakeTimers();
+            vi.stubGlobal("navigator", { clipboard });
+            const status = await clickCopyInvite();
+            expect(status.textContent).toContain("Couldn’t copy the invite. Use Join Server to open it.");
+            expect(container.textContent).not.toContain("Link Copied!");
+            await act(async () => vi.advanceTimersByTimeAsync(3000));
+            expect(status.textContent).toBe("");
+        });
+
         it("renders support sections and opens settings from Explore Atrium", async () => {
             const onNavigate = vi.fn();
             await act(async () => {
