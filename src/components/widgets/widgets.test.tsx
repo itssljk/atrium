@@ -110,6 +110,30 @@ describe("Widgets & UI Components", () => {
             expect(container.querySelector("input")?.placeholder).toBe("Search GitHub...");
             expect(fetchSuggestions).not.toHaveBeenCalled();
         });
+
+        it("moves the same active marker with arrow keys and pointer hover", async () => {
+            fetchSuggestions.mockResolvedValue(["react tutorial", "react reference"]);
+            await enterQuery("react");
+            const suggestions = container.querySelectorAll<HTMLButtonElement>(".search-suggestion");
+            const activeRows = () => Array.from(suggestions, (row) => row.dataset.active);
+            expect(activeRows()).toEqual(["false", "false"]);
+
+            await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" })));
+            expect(activeRows()).toEqual(["true", "false"]);
+
+            await act(async () => suggestions[1].dispatchEvent(new MouseEvent("mouseover", { bubbles: true })));
+            expect(activeRows()).toEqual(["false", "true"]);
+        });
+
+        it("keeps the clear control out of keyboard navigation when empty", async () => {
+            const clear = container.querySelector<HTMLButtonElement>('button[aria-label="Clear search"]')!;
+            expect(clear.disabled).toBe(true);
+            await enterQuery("a");
+            expect(clear.disabled).toBe(false);
+            await act(async () => clear.click());
+            expect(clear.disabled).toBe(true);
+            expect(document.activeElement).toBe(container.querySelector("input"));
+        });
     });
     describe("Greeting", () => {
         it("renders greeting headline when enabled", async () => {

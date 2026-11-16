@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import type { CSSProperties } from "react";
 import { Search, X } from "lucide-react";
 import { openSettingsDrawer } from "@/utils/useSettingsDrawer";
 import { settings } from "@/utils/settings";
@@ -311,18 +312,10 @@ export default function SearchBar() {
             return customColor;
         return null;
     })();
-    const inputCustomStyle: React.CSSProperties | undefined = tintColor
-        ? {
-            backgroundColor: `color-mix(in srgb, ${tintColor} ${searchStyle === "solid" ? "25%" : "20%"}, ${searchStyle === "solid" ? "var(--solid-bg)" : "var(--glass-bg)"})`,
-            borderColor: `color-mix(in srgb, ${tintColor} ${searchStyle === "solid" ? "35%" : "30%"}, ${searchStyle === "solid" ? "var(--solid-border)" : "var(--glass-border)"})`,
-        }
-        : undefined;
-    const dropdownCustomStyle: React.CSSProperties | undefined = tintColor
-        ? {
-            backgroundColor: `color-mix(in srgb, ${tintColor} ${searchStyle === "solid" ? "22%" : "16%"}, ${searchStyle === "solid" ? "var(--solid-bg-dropdown)" : "var(--glass-bg-dropdown)"})`,
-            borderColor: `color-mix(in srgb, ${tintColor} ${searchStyle === "solid" ? "30%" : "25%"}, ${searchStyle === "solid" ? "var(--solid-border)" : "var(--glass-border)"})`,
-        }
-        : undefined;
+    const searchSurfaceStyle: CSSProperties & { "--search-tint"?: string } = {
+        "--search-tint": tintColor ?? undefined,
+        zIndex: showSuggestions && suggestions.length > 0 ? 50 : undefined,
+    };
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!query.trim())
@@ -343,7 +336,7 @@ export default function SearchBar() {
         setQuery("");
         inputRef.current?.focus();
     };
-    return (<div data-search-style={searchStyle} data-search-color={searchColor} className="w-full max-w-lg mx-auto flex flex-col gap-4 relative" style={{ zIndex: showSuggestions && suggestions.length > 0 ? 50 : undefined }}>
+    return (<div data-search-style={searchStyle} data-search-color={searchColor} className="w-full max-w-lg mx-auto flex flex-col gap-4 relative" style={searchSurfaceStyle}>
       <div ref={containerRef} className="w-full flex flex-col gap-4 relative animate-fade-in-up">
         <form onSubmit={handleSubmit} className="w-full transition-all duration-300 relative group">
           <div className="relative flex items-center">
@@ -351,9 +344,9 @@ export default function SearchBar() {
             ? `Routing to ${detectedBang.name} via ${detectedBang.bangToken}`
             : `Search provider: ${activeEngine.name} (Click to open search settings)`} aria-label={detectedBang
             ? `Routing to ${detectedBang.name} via ${detectedBang.bangToken}`
-            : `Search provider: ${activeEngine.name}. Click to open search settings`} className={`absolute left-2.5 sm:left-3 m-1 p-2 sm:p-1.5 ${engineBtnRadiusClass} active:scale-90 hover:scale-105 transition-all duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] cursor-pointer flex items-center justify-center z-20 hover:bg-[var(--foreground)]/8 text-[var(--foreground)]/70 hover:text-[var(--foreground)] group/engine`}>
+            : `Search provider: ${activeEngine.name}. Click to open search settings`} className={`search-action absolute left-2.5 sm:left-3 m-1 p-2 sm:p-1.5 ${engineBtnRadiusClass} active:scale-90 hover:scale-105 transition-all duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] cursor-pointer flex items-center justify-center z-20 hover:bg-[var(--foreground)]/8 group/engine`}>
               <span className="flex items-center justify-center">
-                {isMounted && detectedBang ? (<img key={`bang-${detectedBang.domain}`} src={faviconUrl(detectedBang.domain, 32)} alt={detectedBang.name} decoding="async" className="w-5 h-5 object-contain filter dark:brightness-95 select-none transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/engine:scale-115"/>) : isMounted && activeEngine.domain && !faviconError ? (<img key={activeEngine.id} src={faviconUrl(activeEngine.domain)} alt="" decoding="async" className="w-5 h-5 object-contain filter dark:brightness-90 select-none transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/engine:scale-115" onError={() => setFaviconError(true)}/>) : (<Search className="w-4 h-4 text-[var(--foreground)]/55 group-focus-within:text-[var(--accent)] transition-colors duration-300"/>)}
+                {isMounted && detectedBang ? (<img key={`bang-${detectedBang.domain}`} src={faviconUrl(detectedBang.domain, 32)} alt={detectedBang.name} decoding="async" className="w-5 h-5 object-contain filter dark:brightness-95 select-none transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/engine:scale-115"/>) : isMounted && activeEngine.domain && !faviconError ? (<img key={activeEngine.id} src={faviconUrl(activeEngine.domain)} alt="" decoding="async" className="w-5 h-5 object-contain filter dark:brightness-90 select-none transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/engine:scale-115" onError={() => setFaviconError(true)}/>) : (<Search className="w-4 h-4"/>)}
               </span>
             </button>
 
@@ -369,53 +362,49 @@ export default function SearchBar() {
             ? "Search..."
             : detectedBang
                 ? `Search ${detectedBang.name}...`
-                : `Search ${activeEngine.name}...`} style={inputCustomStyle} className={`w-full h-[54px] sm:h-[52px] pl-12 sm:pl-13 pr-12 ${inputRadiusClass} ${searchStyle === "solid" ? "solid-input" : "glass-input"} text-base placeholder-[var(--foreground)]/50 tracking-wide focus:outline-none transition-all duration-300`} autoComplete="off" spellCheck="false"/>
+                : `Search ${activeEngine.name}...`} className={`search-input w-full h-[54px] sm:h-[52px] pl-12 sm:pl-13 pr-12 ${inputRadiusClass} ${searchStyle === "solid" ? "solid-input" : "glass-input"} text-base tracking-wide`} autoComplete="off" spellCheck="false"/>
 
-            {!query && (<kbd className="hidden sm:inline-block absolute right-4 px-1.5 py-0.5 rounded border border-[var(--foreground)]/25 text-[10px] text-[var(--foreground)]/40 search-shortcut-kbd pointer-events-none group-focus-within:opacity-0 group-focus-within:scale-75 group-focus-within:translate-x-1 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] uppercase font-sans">
+            {!query && (<kbd className="hidden sm:inline-block absolute right-4 px-1.5 py-0.5 rounded border border-[var(--foreground)]/25 text-[10px] text-[var(--search-secondary-text)] pointer-events-none group-focus-within:opacity-0 group-focus-within:scale-75 group-focus-within:translate-x-1 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] uppercase font-sans">
                 {shortcutLabel}
               </kbd>)}
 
-            <button type="button" onClick={handleClear} aria-label="Clear search" className={`absolute right-2.5 sm:right-4 m-1 p-2 sm:p-1 ${clearBtnRadiusClass} text-[var(--foreground)]/50 hover:text-[var(--foreground)]/80 hover:bg-[var(--foreground)]/5 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] active:scale-90 ${query ? "opacity-100 scale-100 rotate-0 pointer-events-auto" : "opacity-0 scale-50 -rotate-90 pointer-events-none"}`}>
+            <button type="button" onClick={handleClear} aria-label="Clear search" disabled={!query} className={`search-action absolute right-2.5 sm:right-4 m-1 p-2 sm:p-1 ${clearBtnRadiusClass} hover:bg-[var(--foreground)]/5 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] active:scale-90 ${query ? "opacity-100 scale-100 rotate-0 pointer-events-auto" : "opacity-0 scale-50 -rotate-90 pointer-events-none"}`}>
               <X className="w-4 h-4 sm:w-3.5 sm:h-3.5"/>
             </button>
           </div>
         </form>
 
         {showSuggestions && suggestions.length > 0 && (<div className="absolute left-0 right-0 z-40 animate-liquid-drop max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:top-auto max-sm:bottom-[max(1rem,var(--safe-area-bottom))]" style={{ top: "calc(100% + 6px)" }}>
-            <div style={dropdownCustomStyle} className={`${dropdownRadiusClass} ${searchStyle === "solid" ? "solid-dropdown" : "glass-dropdown"} overflow-hidden py-1 px-1 max-sm:shadow-2xl`}>
+            <div className={`search-suggestions ${dropdownRadiusClass} ${searchStyle === "solid" ? "solid-dropdown" : "glass-dropdown"} overflow-hidden py-1 px-1 max-sm:shadow-2xl`}>
               {suggestions.map((item, i) => {
                 const isActive = i === activeIndex;
                 if (item.type === "bang") {
-                    return (<button key={`bang-${item.bang}`} type="button" onMouseDown={(e) => {
+                    return (<button key={`bang-${item.bang}`} type="button" data-active={isActive} onMouseDown={(e) => {
                             e.preventDefault();
                             selectSuggestion(item);
-                        }} onMouseEnter={() => setActiveIndex(i)} className={`w-full flex items-center gap-2.5 px-3 max-sm:py-3 py-2 rounded-xl text-left text-sm transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.985] cursor-pointer ${isActive
-                            ? "bg-[var(--accent)]/12 text-[var(--accent)] translate-x-1"
-                            : "text-[var(--foreground)]/75 hover:bg-[var(--foreground)]/5 hover:text-[var(--foreground)] hover:translate-x-0.5"}`}>
+                        }} onMouseEnter={() => setActiveIndex(i)} className="search-suggestion w-full flex items-center gap-2.5 px-3 max-sm:py-3 py-2 rounded-xl text-left text-sm transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.985] cursor-pointer">
                       <img src={faviconUrl(item.domain, 32)} alt="" className="w-4 h-4 object-contain shrink-0 transition-transform duration-200" onError={(e) => {
                             (e.target as HTMLElement).style.opacity = "0.3";
                         }}/>
-                      <span className="font-mono text-xs font-semibold text-[var(--accent)] bg-[var(--accent)]/10 px-1.5 py-0.5 rounded">
+                      <span className="font-mono text-xs font-semibold bg-[var(--foreground)]/8 px-1.5 py-0.5 rounded">
                         {item.bang}
                       </span>
-                      <span className="truncate font-medium text-sm text-[var(--foreground)]/90">
+                      <span className="truncate font-medium">
                         {item.name}
                       </span>
-                      {item.isCustom && (<span className="text-[9px] font-mono text-[var(--accent)] bg-[var(--accent)]/15 px-1 py-0.5 rounded font-medium shrink-0">
+                      {item.isCustom && (<span className="text-[9px] font-mono text-[var(--search-secondary-text)] bg-[var(--foreground)]/8 px-1 py-0.5 rounded font-medium shrink-0">
                           Custom
                         </span>)}
-                      <span className="ml-auto text-[11px] font-mono text-[var(--foreground)]/40 truncate hidden sm:inline">
+                      <span className="ml-auto text-[11px] font-mono text-[var(--search-secondary-text)] truncate hidden sm:inline">
                         {item.domain}
                       </span>
                     </button>);
                 }
-                return (<button key={`query-${item.text}-${i}`} type="button" onMouseDown={(e) => {
+                return (<button key={`query-${item.text}-${i}`} type="button" data-active={isActive} onMouseDown={(e) => {
                         e.preventDefault();
                         selectSuggestion(item);
-                    }} onMouseEnter={() => setActiveIndex(i)} className={`w-full flex items-center gap-3 px-3 max-sm:py-3.5 py-2.5 rounded-xl text-left text-sm transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.985] cursor-pointer ${isActive
-                        ? "bg-[var(--accent)]/12 text-[var(--accent)] translate-x-1"
-                        : "text-[var(--foreground)]/70 hover:bg-[var(--foreground)]/5 hover:text-[var(--foreground)]/90 hover:translate-x-0.5"}`}>
-                    <Search className="w-4 h-4 sm:w-3.5 sm:h-3.5 shrink-0 text-[var(--foreground)]/30 transition-colors duration-200"/>
+                    }} onMouseEnter={() => setActiveIndex(i)} className="search-suggestion w-full flex items-center gap-3 px-3 max-sm:py-3.5 py-2.5 rounded-xl text-left text-sm transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.985] cursor-pointer">
+                    <Search className="w-4 h-4 sm:w-3.5 sm:h-3.5 shrink-0 text-[var(--search-icon)]"/>
                     <span className="truncate font-medium">{item.text}</span>
                   </button>);
             })}
