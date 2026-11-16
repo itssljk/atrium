@@ -21,13 +21,16 @@
     "storage"
   ],
   "host_permissions": [
-    "https://suggestqueries.google.com/*",
+    "https://suggestqueries.google.com/*","https://www.google.com/s2/favicons*",
     "https://duckduckgo.com/*",
     "https://search.brave.com/*",
     "https://api.open-meteo.com/*",
+    "https://geocoding-api.open-meteo.com/*",
+    "https://api.bigdatacloud.net/*",
     "https://nominatim.openstreetmap.org/*",
     "https://picsum.photos/*",
     "https://www.bing.com/*",
+    "https://bing.biturl.top/*",
     "https://zenquotes.io/*"
   ],
   "icons": {

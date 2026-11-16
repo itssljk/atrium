@@ -1,7 +1,8 @@
 # Contributing to Atrium Tabs
 
-Thank you for considering a contribution! Atrium Tabs is a fully client-side,
-privacy-first browser start page, and we welcome bug reports, features,
+Thank you for considering a contribution! Atrium Tabs is a browser start page
+that stores settings in the browser and makes direct requests to third-party
+services for some optional features. We welcome bug reports, features,
 documentation, and design improvements.
 
 ## Getting Started
@@ -34,19 +35,19 @@ npm run build     # Production build
 
 ## Code Guidelines
 
-- Fully client-side: no servers, no accounts, no telemetry, ever.
-- No new external requests without updating `THIRD-PARTY-NOTICES.md` and the
-  Privacy Policy (`src/pages/PrivacyPage.tsx`).
+- No project-owned application API, user accounts, or analytics are part of this app; optional features may contact third-party services directly from the browser.
+- Follow [`DESIGN.md`](./DESIGN.md) as the intended visual direction. It is a forward-looking guide; update it when design decisions or shipped behavior change.
+- Document new external requests and the data they receive in `THIRD-PARTY-NOTICES.md` and the Privacy Policy (`src/pages/PrivacyPage.tsx`); update extension host permissions when needed.
 - No new runtime dependencies without discussion; keep the bundle lean.
-- Accessibility matters: keyboard navigation, focus states, and contrast
-  (APCA-checked) are requirements, not nice-to-haves.
+- Accessibility matters: keyboard navigation, focus states, and readable contrast are requirements, not nice-to-haves. Do not describe contrast as APCA-verified unless it has been measured.
 
 ## Licensing of Contributions
 
 By contributing code, documentation, or other material to this repository, you
-agree that your contributions are licensed under the project's [MIT License](./LICENSE)
-(including its branding & trademark exception), and you confirm you have the
-right to submit them under those terms.
+agree that your contributions are licensed under the project's [MIT License](./LICENSE).
+The MIT License applies to the contributed material as specified in that license;
+it does not grant rights to project trademarks. You confirm you have the right
+to submit your contributions under those terms.
 
 ## Reporting Bugs & Security Issues
 

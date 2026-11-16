@@ -32,9 +32,9 @@ export default function PrivacyPage() {
             <ShieldCheck className="w-5 h-5"/>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-sm font-semibold text-[var(--foreground)]/90">Zero Tracking Policy</span>
+            <span className="text-sm font-semibold text-[var(--foreground)]/90">No Project Analytics</span>
             <p className="text-xs text-[var(--foreground)]/50 leading-relaxed">
-              Atrium Tabs is built with privacy as our core tenet. We do not run background trackers, we do not run analytical software, and we do not collect, monetize, or share your personal data. <span className="text-[var(--foreground)]/40">(Last updated: September 8, 2026)</span>
+              The application has no project-operated analytics or account backend. Some features send requests to third-party services described below; those providers receive the request data and connection metadata needed to answer them. <span className="text-[var(--foreground)]/40">(Last updated: June 2, 2026)</span>
             </p>
           </div>
         </div>
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
               <EyeOff className="w-4 h-4 text-[var(--accent)]"/> 1. Data Collection
             </h2>
             <p>
-              We do not collect any personal information, location tracking, or browsing history. Any queries entered into the Search Bar are passed directly to the search provider of your choice (e.g. Google, DuckDuckGo, Brave) and are not logged or stored by Atrium Tabs.
+              Atrium Tabs does not maintain user accounts, a search-history feature, or an application backend that receives search queries. When you submit a search, the query is sent to the selected search provider. While you type, supported autocomplete providers may receive partial query text. The app keeps a small, temporary in-memory cache of autocomplete results for the current page session; it does not persist a search history. Third-party providers may receive connection metadata and handle requests under their own policies.
             </p>
           </section>
 
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
               <Database className="w-4 h-4 text-[var(--accent)]"/> 2. Local Storage & Sync
             </h2>
             <p>
-              All configurations, customization settings, and shortcuts are stored inside your browser&apos;s local memory via <code>localStorage</code> and <code>IndexedDB</code>, and we have no access to them. When installed as a Firefox extension, the optional <strong>Settings Sync</strong> feature (disabled by default in Settings) mirrors your preferences through your Firefox account via Firefox Sync so your setup follows you across your devices. That synced data is handled under Mozilla&apos;s Firefox Sync privacy terms. Clearing your browser&apos;s site data or cache will restore Atrium Tabs to its default state.
+              Settings are stored in browser storage (primarily <code>localStorage</code>); uploaded background image data is stored separately in <code>IndexedDB</code>. The app does not upload those image files. In supported extension builds, optional <strong>Settings Sync</strong> (off by default) stores settings marked for sync—including appearance, quicklinks, search engine configuration, and some weather/mail/background preferences—in the browser&apos;s sync storage (Firefox uses Firefox Sync). Mozilla&apos;s or your browser provider&apos;s sync terms apply. Clearing local browser or extension data removes local copies, but enabled sync may restore synced settings when the extension starts; manage or disable sync in the browser as well. Clearing the HTTP cache alone does not erase stored settings.
             </p>
           </section>
 
@@ -64,27 +64,30 @@ export default function PrivacyPage() {
               <ExternalLink className="w-4 h-4 text-[var(--accent)]"/> 3. Third-Party Integrations
             </h2>
             <p>
-              Atrium Tabs connects to external services to provide convenient features:
+              Features can make requests to external services. Some requests happen automatically when a feature is enabled (for example, weather refresh after location permission has already been granted, displayed favicon images, and quotes when the greeting is enabled); others happen when you type a search, choose a wallpaper, or enter a city. Requests include ordinary network metadata such as your IP address. The service receives the data described here:
             </p>
             <ul className="list-disc pl-5 mt-1 flex flex-col gap-1.5 text-xs text-[var(--foreground)]/70">
               <li>
-                <strong>Weather Forecasts</strong>: Forecasts are fetched client-side from the Open-Meteo API (open-meteo.com), and city lookups and place names use OpenStreetMap&apos;s Nominatim service. In automatic mode, Atrium Tabs asks your browser for your approximate location (GPS) through the browser&apos;s own permission prompt; only your coordinates are sent to those services to compute and label the forecast, and weather data is never tied to a user account.
+                <strong>Weather and location</strong>: Forecast coordinates are sent to Open-Meteo. When automatic weather is enabled and the browser has granted geolocation access, the app can refresh the forecast without another prompt. Browser permission controls whether coordinates are available. Coordinates are sent to BigDataCloud for reverse geocoding, with Nominatim as a fallback. If you search for a city manually, the typed city name is sent first to Open-Meteo&apos;s geocoding API and may be sent to Nominatim if that lookup fails. The app has no weather account; these providers&apos; handling and retention are governed by their own policies.
               </li>
               <li>
-                <strong>Favicon Lookups</strong>: Shortcut icons are fetched from Google&apos;s favicon service (google.com/s2/favicons), which receives only the shortcut&apos;s domain name.
+                <strong>Favicon lookups</strong>: Displayed shortcut icons may be fetched from Google&apos;s favicon service. The request includes the shortcut&apos;s domain in its URL; Google also receives ordinary connection metadata.
               </li>
               <li>
-                <strong>Daily Quotes</strong>: The greeting line shows an inspirational quote cached locally for two hours: in the browser extension fetched from the ZenQuotes API (<a href="https://zenquotes.io/" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">zenquotes.io</a>), and on the hosted website served offline from a vetted, curated collection of uplifting quotes.
+                <strong>Quotes</strong>: When the greeting is enabled in a quote-bearing mode, extension builds may request a quote from the ZenQuotes API (<a href="https://zenquotes.io/" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">zenquotes.io</a>). Quotes are cached in browser storage for up to two hours. The hosted website uses a bundled curated quote collection.
               </li>
               <li>
-                <strong>Background Gallery &amp; Wallpapers</strong>: The Picsum gallery (picsum.photos) is used to browse sample photos, and curated background photos are served from Unsplash&apos;s image CDN. When Bing Daily Wallpaper is enabled, daily image metadata and wallpapers are fetched client-side from Microsoft Bing (bing.com).
+                <strong>Backgrounds</strong>: The optional photo gallery requests listings and images from Picsum (picsum.photos); curated photos load from Unsplash&apos;s image CDN (images.unsplash.com). When Bing Daily Wallpaper is selected, metadata is requested from Bing, with bing.biturl.top as a fallback, and the selected image is loaded from its image host. If you provide a remote image URL, your browser requests that URL directly.
               </li>
               <li>
-                <strong>Search Providers &amp; Suggestions</strong>: When using the search bar, your query is sent to your selected provider, governed by their respective privacy terms. When Google, DuckDuckGo, or Brave Search is your active engine, partial query text is also sent to that provider&apos;s suggestions API to display live autocomplete results.
+                <strong>Search providers &amp; suggestions</strong>: Submitting a search sends the query to the selected provider. When Google, DuckDuckGo, or Brave Search is active, partial query text may also be sent to that provider&apos;s suggestions API for autocomplete. Each provider&apos;s own privacy terms apply.
+              </li>
+              <li>
+                <strong>Shortcuts and mail links</strong>: Activating a quicklink or mail shortcut navigates your browser to the configured destination. That destination receives the normal navigation request and connection metadata. Custom URLs are chosen by you and may point to services not named in this policy.
               </li>
             </ul>
             <p className="text-xs text-[var(--foreground)]/60 mt-2">
-              These integrations power features you explicitly use; Atrium Tabs makes no other requests on your behalf. Weather data is provided by Open-Meteo (licensed CC BY 4.0), place names by OpenStreetMap contributors (ODbL), background photos by Picsum/Unsplash contributors (Unsplash License) and Bing/Microsoft, and quotes by ZenQuotes. Full attribution and license details are maintained in the project&apos;s <a href="https://github.com/itssljk/atrium-tabs/blob/main/THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">Third-Party Notices</a>.
+              The app has no project-operated application API for these features. The third-party services above receive requests for relevant enabled or selected features; this can include background refreshes and partial search text. Services may change their handling or retention policies. See the project&apos;s <a href={siteConfig.links.github + "/blob/main/THIRD-PARTY-NOTICES.md"} target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">Third-Party Notices</a> for the known services, attribution, and license information.
             </p>
           </section>
 
@@ -98,7 +101,7 @@ export default function PrivacyPage() {
           <section className="flex flex-col gap-2">
             <h2 className="text-base font-semibold text-[var(--foreground)]">5. Your Rights & Data Controls</h2>
             <p>
-              Because Atrium Tabs stores everything locally and holds no accounts or records about you, you retain full control at all times: you can view, export, or delete all of your settings through your browser, and clearing site data erases everything instantly. We are not a data controller or processor for any personal data under GDPR, CCPA, or similar regulations, as no personal data ever reaches us. If you believe a third-party integration mishandles your data, please reach out via the channels below and we will investigate or remove the integration.
+              You can manage or clear local browser/extension storage through your browser. The in-app settings export covers settings marked for backup; it does not include uploaded background image data in IndexedDB. If browser sync is enabled, synced settings may be restored until they are also removed from sync storage. The app does not operate an account or application backend that receives these settings, but third-party services and the host of any deployed website may process request data under their own policies. For concerns about an integration, contact the maintainers using the project channels below; do not send sensitive personal information in a public issue or chat.
             </p>
           </section>
 

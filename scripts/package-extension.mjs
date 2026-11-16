@@ -35,6 +35,11 @@ for (const entry of fs.readdirSync(distDir, { recursive: true })) {
   zip.addLocalFile(abs, path.dirname(entry) === "." ? "" : path.dirname(entry));
 }
 
+// Include project-level license and attribution documents in the distributable.
+for (const file of ["LICENSE", "THIRD-PARTY-NOTICES.md", "TRADEMARKS.md"]) {
+  zip.addLocalFile(path.join(root, file));
+}
+
 const outPath = path.join(root, `atrium-tabs-${manifest.version}.zip`);
 zip.writeZip(outPath);
 console.log(`✓ Packaged ${zip.getEntryCount()} files → ${path.basename(outPath)}`);

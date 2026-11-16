@@ -34,7 +34,7 @@ export default function TrademarksPage() {
           <div className="flex flex-col gap-1">
             <span className="text-sm font-semibold text-[var(--foreground)]/90">Code is MIT, the brand is not</span>
             <p className="text-xs text-[var(--foreground)]/50 leading-relaxed">
-              The MIT license covers the Atrium Tabs codebase. The project&apos;s name, logo, icons, and other brand marks are not licensed under it. This page summarizes the project&apos;s <a href={siteConfig.links.github + "/blob/main/TRADEMARKS.md"} target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">Trademarks &amp; Branding Policy</a>. <span className="text-[var(--foreground)]/40">(Effective: September 8, 2026)</span>
+              The MIT license covers the Atrium Tabs codebase. The project&apos;s name, logo, icons, and other brand marks are not licensed under it. The repository&apos;s <a href={siteConfig.links.github + "/blob/main/TRADEMARKS.md"} target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">Trademarks &amp; Branding Policy</a> is the canonical version of the project&apos;s branding guidance. <span className="text-[var(--foreground)]/40">(Last updated: June 2, 2026)</span>
             </p>
           </div>
         </div>
@@ -46,7 +46,7 @@ export default function TrademarksPage() {
               <ShieldCheck className="w-4 h-4 text-[var(--accent)]"/> 1. What&apos;s Protected
             </h2>
             <p>
-              The name &quot;Atrium Tabs&quot;, the &quot;Atrium&quot; name as used for this project, the project logo, icons, and other brand graphics and design marks (the &quot;Marks&quot;) remain the property of the Atrium Tabs Contributors. Nothing in the MIT license grants rights to use the Marks.
+              The project treats the name &quot;Atrium Tabs&quot;, the &quot;Atrium&quot; name as used for this project, the project logo, icons, and other brand graphics and design marks (the &quot;Marks&quot;) as branding separate from the code license. This policy does not determine ownership of any particular mark; confirm rights and permissions with the relevant rights holder.
             </p>
           </section>
 
@@ -54,7 +54,7 @@ export default function TrademarksPage() {
             <h2 className="text-base font-semibold text-[var(--foreground)]">2. Allowed Without Permission</h2>
             <ul className="list-disc pl-5 mt-1 flex flex-col gap-1.5 text-xs text-[var(--foreground)]/70">
               <li><strong>Attribution</strong>: truthfully referring to the project by name as the origin of the software (&quot;fork of Atrium Tabs&quot;, &quot;based on Atrium Tabs&quot;).</li>
-              <li><strong>Verbatim forks with credit</strong>: redistributing unmodified copies while keeping the original name and branding intact.</li>
+              <li><strong>Verbatim forks with credit</strong>: redistributing unmodified copies under the MIT License by preserving its required copyright and permission notices. Keeping the name and branding is optional and does not grant broader rights to the Marks.</li>
               <li><strong>Nominative fair use</strong>: describing or linking to the project in articles, reviews, or comparisons.</li>
             </ul>
           </section>

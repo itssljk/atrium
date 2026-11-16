@@ -1,6 +1,6 @@
 # Atrium Tabs
 
-A minimalist, dark-themed start page and new tab replacement for your browser, with ambient lighting, customizable accents, and settings that sync across devices.
+A minimalist, dark-themed start page and new tab replacement for your browser, with ambient lighting, customizable accents, and optional settings sync in supported extension builds.
 
 ## Features
 
@@ -9,10 +9,10 @@ A minimalist, dark-themed start page and new tab replacement for your browser, w
 - **Dynamic greetings** that change based on the time of day, with inspirational quotes.
 - **Quick search** with support for multiple search engines (Google, DuckDuckGo, Brave, Ecosia, Startpage, and custom engines).
 - **Preferences drawer** for accent colors, ambient glow, performance mode, layout geometry, and quick settings search.
-- **Settings sync** across devices for accents, quicklinks, search engines, and layout preferences via Firefox Sync (in extension builds).
+- **Optional settings sync** across devices for selected preferences via browser sync storage (Firefox Sync in Firefox extension builds).
 - **Quick-action mail button** with one-click access to Gmail, Outlook, ProtonMail, iCloud, Yahoo, or custom webmail in multiple styles (pill, icon, or glass).
-- **Instant sub-8ms startup** with pre-rendered Frame-1 geometry painting on the very first display refresh before JavaScript execution.
-- **100% Offline & Private** with self-hosted local fonts (`Outfit` and `Geist Mono`), zero external Google Fonts requests, and zero tracking.
+- **Pre-rendered startup skeleton** to show the page structure before the app finishes loading.
+- **Locally stored settings and self-hosted fonts** (`Outfit` and `Geist Mono`); no project analytics or tracking code. Optional features make requests to third-party services—see the [Privacy Policy source](./src/pages/PrivacyPage.tsx) and [Third-Party Notices](./THIRD-PARTY-NOTICES.md).
 - **Optimized custom backgrounds** with automatic client-side downscaling and WebP compression for instantaneous loading, plus Bing Daily Wallpaper, curated photography, uploads, pasted URLs, or web gallery. Includes opacity, blur, and dimming controls.
 - **Search autofocus & bangs** for instant typing on new tabs (`Ctrl+T`), search engine switching, and custom `!bangs`.
 
@@ -29,7 +29,7 @@ Atrium starts with a dark browser tint. With Smart Readability on, it reuses the
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20.11+
 
 ### Running Locally
 
@@ -62,7 +62,13 @@ Atrium starts with a dark browser tint. With Smart Readability on, it reuses the
 2. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`.
 3. Click **Load Temporary Add-on...** and select `dist/manifest.json` (or any file inside `dist/`).
 
-The build produces clean static files with no inline scripts, along with native Manifest V3 assets ready for Firefox extension Content Security Policies.
+To create a versioned ZIP for distribution (including the project license and attribution documents), run:
+
+```bash
+npm run build:extension
+```
+
+The build produces static files with no inline scripts and Manifest V3 assets for Firefox. Some optional features require network access to services listed in the in-app Privacy Policy and [Third-Party Notices](./THIRD-PARTY-NOTICES.md).
 
 ### Development
 
@@ -80,7 +86,7 @@ npm run build     # Production build
 
 ## License & Trademarks
 
-This project is licensed under the [MIT License](./LICENSE).
+The app code is licensed under the [MIT License](./LICENSE). Bundled fonts and third-party components have separate license terms; see [Third-Party Notices](./THIRD-PARTY-NOTICES.md).
 
 > [!IMPORTANT]
 > **Trademarks**: The MIT license covers the code. The project's name

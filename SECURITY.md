@@ -15,11 +15,11 @@ Security fixes are applied to the latest released version on the `main` branch.
 discussions, or Discord.**
 
 Instead, report them privately via
-[GitHub Security Advisories](https://github.com/itssljk/atrium-tabs/security/advisories/new)
-on this repository. If you cannot use GitHub Security Advisories, contact the
-maintainer directly through the
-[Atrium Tabs Discord](https://discord.gg/Kfn4V2nF3N) and ask for a private
-channel to discuss the finding.
+[GitHub Security Advisories](https://github.com/itssljk/atrium/security/advisories/new)
+on this repository. If you cannot use GitHub Security Advisories, you may
+contact the maintainer through the
+[Atrium Tabs Discord](https://discord.gg/Kfn4V2nF3N) **only to arrange a
+private channel**; do not post vulnerability details in a public Discord space.
 
 Please include as much of the following as you can:
 
@@ -36,18 +36,18 @@ Please include as much of the following as you can:
 
 ## Scope
 
-Atrium Tabs is a fully client-side application. Of particular interest:
+Atrium Tabs is a client-side application; optional features make direct requests to third-party services. Of particular interest:
 
 - Content Security Policy bypasses or injection via user-supplied settings
   (custom backgrounds, quicklink URLs, custom search engines, `!bangs`)
 - Anything that would exfiltrate user data (settings, searches, location) to
   parties other than those documented in `THIRD-PARTY-NOTICES.md` and the
-  Privacy Policy
+  Privacy Policy; report undocumented endpoints as potential disclosure gaps
 - Manifest V3 permission misuse or privilege escalation in the extension build
 
 ## Non-Scope
 
-- Vulnerabilities in the third-party services themselves (Open-Meteo, ZenQuotes,
-  Picsum, Unsplash, Bing, Google, DuckDuckGo, Brave): please report those to
-  the respective providers.
+- Vulnerabilities in third-party services themselves (Open-Meteo, BigDataCloud,
+  Nominatim/OpenStreetMap, ZenQuotes, Picsum, Unsplash, Bing, Bing Biturl,
+  Google, DuckDuckGo, Brave): please report those to the respective providers.
 - Theoretical issues with no plausible exploit path in the shipping build.

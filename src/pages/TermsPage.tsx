@@ -34,7 +34,7 @@ export default function TermsPage() {
           <div className="flex flex-col gap-1">
             <span className="text-sm font-semibold text-[var(--foreground)]/90">Open Source Terms</span>
             <p className="text-xs text-[var(--foreground)]/50 leading-relaxed">
-              Atrium Tabs is a free and open-source project. By using the start page, you agree to these terms. If you do not agree, please do not use the application. <span className="text-[var(--foreground)]/40">(Effective: September 8, 2026)</span>
+              These terms describe use of the Atrium Tabs application. <span className="text-[var(--foreground)]/40">(Last updated: June 2, 2026)</span>
             </p>
           </div>
         </div>
@@ -46,21 +46,21 @@ export default function TermsPage() {
               <Shield className="w-4 h-4 text-[var(--accent)]"/> 1. Acceptance of Terms
             </h2>
             <p>
-              By accessing and using Atrium Tabs (the &quot;Service&quot;), you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. These terms constitute a legally binding agreement between you and the Atrium Tabs contributors.
+              These terms describe the application and its limitations. They do not replace the MIT License or licenses that apply to third-party components and content. The repository does not identify a separate contracting entity; obtain legal advice before relying on these terms as an agreement.
             </p>
           </section>
 
           <section className="flex flex-col gap-2">
             <h2 className="text-base font-semibold text-[var(--foreground)]">2. Description of Service</h2>
             <p>
-              Atrium Tabs is a client-side browser start page dashboard that allows customization of theme colors, shortcut quicklinks, search engine routing, greetings, and weather widgets. The service is provided entirely in your browser without user accounts or server-side database storage.
+              Atrium Tabs is a browser start page dashboard that runs its application logic client-side and allows customization of theme colors, quicklinks, search routing, greetings, and weather. Hosted copies serve static application files through their hosting provider. This repository includes no project-operated user accounts or application database.
             </p>
           </section>
 
           <section className="flex flex-col gap-2">
             <h2 className="text-base font-semibold text-[var(--foreground)]">3. User Customization & Content</h2>
             <p>
-              You own all customizations, shortcuts, background images, and settings configured on your dashboard. This configuration data is stored locally in your browser. You are responsible for ensuring that any URLs, custom shortcut titles, or uploaded background images comply with applicable laws and intellectual property rights.
+              You retain whatever rights you hold in the settings, shortcut details, and images you provide. Third-party backgrounds remain subject to their respective owners&apos; rights and licenses; choosing an image in the app does not transfer ownership. Settings are stored in browser storage, and uploaded background image data is stored locally in IndexedDB. You are responsible for ensuring that URLs, shortcut content, and uploaded images comply with applicable laws and intellectual property rights.
             </p>
           </section>
 
@@ -86,7 +86,7 @@ export default function TermsPage() {
           <section className="flex flex-col gap-2">
             <h2 className="text-base font-semibold text-[var(--foreground)]">6. Licensing & Open Source</h2>
             <p>
-              Atrium Tabs is licensed under the MIT License (see the project repository&apos;s <a href="https://github.com/itssljk/atrium-tabs/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">LICENSE file</a>). You are free to share, modify, and distribute the codebase, provided you preserve the original copyright notice and permission notice. The project&apos;s name, logo, and brand marks are not covered by the code license. See the <a href="https://github.com/itssljk/atrium-tabs/blob/main/TRADEMARKS.md" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">Trademarks &amp; Branding Policy</a> for details. Bundled fonts are distributed under the SIL Open Font License 1.1, and third-party libraries and services are listed with their licenses in the project&apos;s <a href="https://github.com/itssljk/atrium-tabs/blob/main/THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">Third-Party Notices</a>.
+              Atrium Tabs is licensed under the MIT License (see the project repository&apos;s <a href="https://github.com/itssljk/atrium/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">LICENSE file</a>). You are free to share, modify, and distribute the codebase, provided you preserve the original copyright notice and permission notice. The project&apos;s name, logo, and brand marks are not covered by the code license. See the <a href="https://github.com/itssljk/atrium/blob/main/TRADEMARKS.md" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">Trademarks &amp; Branding Policy</a> for details. Bundled fonts are distributed under the SIL Open Font License 1.1, and third-party libraries and services are listed with their licenses in the project&apos;s <a href="https://github.com/itssljk/atrium/blob/main/THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">Third-Party Notices</a>.
             </p>
           </section>
 

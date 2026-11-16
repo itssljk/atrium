@@ -6,19 +6,21 @@ which grants broad rights to use, modify, and redistribute the software.
 
 ## What's protected
 
-The name "Atrium Tabs", the "Atrium" name as used for this project, the project
-logo, icons, and other brand graphics and design marks associated with the
-project (the "Marks") are not licensed under MIT and remain the property of
-the Atrium Tabs Contributors.
+The project treats the name "Atrium Tabs", the "Atrium" name as used for this
+project, the project logo, icons, and other brand graphics and design marks
+associated with the project (the "Marks") as branding separate from the code
+license. This policy does not determine ownership of any particular mark;
+rights and permissions should be confirmed with the relevant rights holder.
 
 ## What you may do without asking
 
 - **Attribution**: Refer to the project by name to identify it as the origin of
   the software ("fork of Atrium Tabs", "based on Atrium Tabs"), provided the
   reference is truthful and not misleading.
-- **Verbatim forks with credit**: Redistribute unmodified copies, keeping the
-  original name and branding intact, as required by the license's
-  attribution requirements.
+- **Verbatim forks with credit**: Redistribute unmodified copies under the MIT
+  License by preserving its required copyright and permission notices. Keeping
+  the project's name and branding is optional and does not grant a broader
+  license to use the Marks.
 - **Nominative fair use**: Describe or link to the project (e.g. a blog post,
   comparison article, or review).
 
@@ -42,5 +44,5 @@ reserved font names per the bundled fonts' SIL Open Font License 1.1 terms
 ## Requests
 
 For trademark questions or permission requests, contact the maintainers via
-the [GitHub repository](https://github.com/itssljk/atrium-tabs) or the
+the [GitHub repository](https://github.com/itssljk/atrium) or the
 [Atrium Tabs Discord](https://discord.gg/Kfn4V2nF3N).

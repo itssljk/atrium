@@ -58,7 +58,7 @@ export async function searchCities(query: string): Promise<GeoCityResult[]> {
         const res = await fetch(url, {
             headers: {
                 "Accept-Language": typeof navigator !== "undefined" ? navigator.language : "en",
-                "User-Agent": "AtriumTabsStartPage/1.7 (https://github.com/itssljk/atrium-tabs)",
+                "User-Agent": "AtriumTabsStartPage/1.7 (https://github.com/itssljk/atrium)",
             },
         });
         if (!res.ok)
@@ -135,7 +135,7 @@ export async function reverseGeocode(lat: number, lon: number): Promise<string> 
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=jsonv2&zoom=10`, {
             headers: {
                 "Accept-Language": typeof navigator !== "undefined" ? navigator.language : "en",
-                "User-Agent": "AtriumTabsStartPage/1.7 (https://github.com/itssljk/atrium-tabs)",
+                "User-Agent": "AtriumTabsStartPage/1.7 (https://github.com/itssljk/atrium)",
             },
         });
         if (res.ok) {
