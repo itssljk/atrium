@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, KeyboardEvent, MouseEvent } from "react";
 import { Search, X } from "lucide-react";
 import { openSettingsDrawer } from "@/utils/useSettingsDrawer";
 import { settings } from "@/utils/settings";
@@ -71,16 +71,6 @@ export default function SearchBar() {
     const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
     const [activeIndex, setActiveIndex] = useState(-1);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    const suggestionsRef = useRef<SuggestionItem[]>([]);
-    const showSuggestionsRef = useRef(false);
-    const activeIndexRef = useRef(-1);
-    const enginesRef = useRef<SearchEngine[]>(engines);
-    useEffect(() => {
-        suggestionsRef.current = suggestions;
-        showSuggestionsRef.current = showSuggestions;
-        activeIndexRef.current = activeIndex;
-        enginesRef.current = engines;
-    }, [suggestions, showSuggestions, activeIndex, engines]);
     const activeEngine = engines.find((item) => item.id === selectedEngineId) || engines[0];
     const detectedBang = useMemo(() => {
         return detectBang(query, engines, customBangs, deletedBangs);
@@ -130,7 +120,7 @@ export default function SearchBar() {
                     return;
                 setSuggestions(parsed.map((text) => ({ type: "query" as const, text })));
                 setActiveIndex(-1);
-                setShowSuggestions(true);
+                setShowSuggestions(containerRef.current?.contains(document.activeElement) ?? false);
             }
             catch {
                 if (!active)
@@ -145,26 +135,57 @@ export default function SearchBar() {
                 clearTimeout(suggestTimer.current);
         };
     }, [query, activeEngine, isMounted, detectedBang, customBangs, deletedBangs]);
-    const selectSuggestion = (item: SuggestionItem) => {
-        if (item.type === "bang") {
-            setQuery(`${item.bang} `);
-            setShowSuggestions(false);
-            setActiveIndex(-1);
-            inputRef.current?.focus();
-            return;
-        }
-        setQuery(item.text);
+    const closeSuggestions = () => {
         setShowSuggestions(false);
         setActiveIndex(-1);
+    };
+    const selectSuggestion = (item: SuggestionItem) => {
+        if (item.type === "bang") {
+            inputRef.current?.focus();
+            setQuery(`${item.bang} `);
+            closeSuggestions();
+            return;
+        }
         const { url: finalUrl } = parseSearchQuery(item.text.trim(), activeEngine, engines, customBangs, deletedBangs);
-        const openInNewTab = settings.get("settings-search-new-tab") === "true";
-        if (openInNewTab) {
+        if (settings.get("settings-search-new-tab") === "true") {
             window.open(finalUrl, "_blank", "noopener,noreferrer");
+            inputRef.current?.focus();
             setQuery("");
         }
         else {
+            setQuery(item.text);
             window.location.href = finalUrl;
         }
+        closeSuggestions();
+    };
+    const handleSuggestionKeys = (event: KeyboardEvent<HTMLDivElement>) => {
+        if (!showSuggestions || suggestions.length === 0 || event.nativeEvent.isComposing)
+            return;
+        if (event.key === "Escape") {
+            inputRef.current?.focus();
+            closeSuggestions();
+            return;
+        }
+        // A focused button handles Enter and Space through its native click.
+        if (event.target !== inputRef.current)
+            return;
+        if (event.key === "ArrowDown") {
+            event.preventDefault();
+            setActiveIndex((index) => (index + 1) % suggestions.length);
+        }
+        if (event.key === "ArrowUp") {
+            event.preventDefault();
+            setActiveIndex((index) => index > 0 ? index - 1 : suggestions.length - 1);
+        }
+        if (event.key === "Enter" && suggestions[activeIndex]) {
+            event.preventDefault();
+            selectSuggestion(suggestions[activeIndex]);
+        }
+    };
+    const keepInputFocusOnMouseDown = (event: MouseEvent<HTMLButtonElement>) => {
+        // Some browsers blur the input without focusing a button on pointer press.
+        if (event.button === 0)
+            event.preventDefault();
     };
     useEffect(() => {
         setFaviconError(false);
@@ -194,29 +215,7 @@ export default function SearchBar() {
         if (shouldAutoFocus) {
             inputRef.current?.focus({ preventScroll: true });
         }
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (showSuggestionsRef.current && suggestionsRef.current.length > 0) {
-                if (e.key === "Escape") {
-                    setShowSuggestions(false);
-                    setActiveIndex(-1);
-                    return;
-                }
-                if (e.key === "ArrowDown") {
-                    e.preventDefault();
-                    setActiveIndex((prev) => (prev < suggestionsRef.current.length - 1 ? prev + 1 : 0));
-                    return;
-                }
-                if (e.key === "ArrowUp") {
-                    e.preventDefault();
-                    setActiveIndex((prev) => (prev > 0 ? prev - 1 : suggestionsRef.current.length - 1));
-                    return;
-                }
-                if (e.key === "Enter" && activeIndexRef.current >= 0) {
-                    e.preventDefault();
-                    selectSuggestion(suggestionsRef.current[activeIndexRef.current]);
-                    return;
-                }
-            }
+        const handleKeyDown = (e: globalThis.KeyboardEvent) => {
             const isSlash = e.key === "/" &&
                 document.activeElement?.tagName !== "INPUT" &&
                 document.activeElement?.tagName !== "TEXTAREA";
@@ -226,15 +225,9 @@ export default function SearchBar() {
                 inputRef.current?.focus();
             }
         };
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as Node;
-            const isInsideContainer = containerRef.current && containerRef.current.contains(target);
-            if (!isInsideContainer) {
-                if (showSuggestionsRef.current) {
-                    setShowSuggestions(false);
-                    setActiveIndex(-1);
-                }
-            }
+        const handleClickOutside = (event: globalThis.MouseEvent) => {
+            if (!containerRef.current?.contains(event.target as Node))
+                closeSuggestions();
         };
         window.addEventListener("keydown", handleKeyDown);
         document.addEventListener("mousedown", handleClickOutside);
@@ -337,7 +330,10 @@ export default function SearchBar() {
         inputRef.current?.focus();
     };
     return (<div data-search-style={searchStyle} data-search-color={searchColor} className="w-full max-w-lg mx-auto flex flex-col gap-4 relative" style={searchSurfaceStyle}>
-      <div ref={containerRef} className="w-full flex flex-col gap-4 relative animate-fade-in-up">
+      <div ref={containerRef} onKeyDown={handleSuggestionKeys} onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget))
+              closeSuggestions();
+      }} className="w-full flex flex-col gap-4 relative animate-fade-in-up">
         <form onSubmit={handleSubmit} className="w-full transition-all duration-300 relative group">
           <div className="relative flex items-center">
             <button ref={triggerRef} type="button" onClick={handleOpenSearchSettings} title={detectedBang
@@ -353,11 +349,6 @@ export default function SearchBar() {
             <input ref={inputRef} type="text" inputMode="search" enterKeyHint="search" value={query} onChange={(e) => setQuery(e.target.value)} onFocus={() => {
             if (suggestions.length > 0)
                 setShowSuggestions(true);
-        }} onBlur={() => {
-            setTimeout(() => {
-                setShowSuggestions(false);
-                setActiveIndex(-1);
-            }, 150);
         }} placeholder={!isMounted
             ? "Search..."
             : detectedBang
@@ -379,10 +370,7 @@ export default function SearchBar() {
               {suggestions.map((item, i) => {
                 const isActive = i === activeIndex;
                 if (item.type === "bang") {
-                    return (<button key={`bang-${item.bang}`} type="button" data-active={isActive} onMouseDown={(e) => {
-                            e.preventDefault();
-                            selectSuggestion(item);
-                        }} onMouseEnter={() => setActiveIndex(i)} className="search-suggestion w-full flex items-center gap-2.5 px-3 max-sm:py-3 py-2 rounded-xl text-left text-sm transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.985] cursor-pointer">
+                    return (<button key={`bang-${item.bang}`} type="button" data-active={isActive} onMouseDown={keepInputFocusOnMouseDown} onClick={() => selectSuggestion(item)} onMouseEnter={() => setActiveIndex(i)} className="search-suggestion w-full flex items-center gap-2.5 px-3 max-sm:py-3 py-2 rounded-xl text-left text-sm transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.985] cursor-pointer">
                       <img src={faviconUrl(item.domain, 32)} alt="" className="w-4 h-4 object-contain shrink-0 transition-transform duration-200" onError={(e) => {
                             (e.target as HTMLElement).style.opacity = "0.3";
                         }}/>
@@ -400,10 +388,7 @@ export default function SearchBar() {
                       </span>
                     </button>);
                 }
-                return (<button key={`query-${item.text}-${i}`} type="button" data-active={isActive} onMouseDown={(e) => {
-                        e.preventDefault();
-                        selectSuggestion(item);
-                    }} onMouseEnter={() => setActiveIndex(i)} className="search-suggestion w-full flex items-center gap-3 px-3 max-sm:py-3.5 py-2.5 rounded-xl text-left text-sm transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.985] cursor-pointer">
+                return (<button key={`query-${item.text}-${i}`} type="button" data-active={isActive} onMouseDown={keepInputFocusOnMouseDown} onClick={() => selectSuggestion(item)} onMouseEnter={() => setActiveIndex(i)} className="search-suggestion w-full flex items-center gap-3 px-3 max-sm:py-3.5 py-2.5 rounded-xl text-left text-sm transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.985] cursor-pointer">
                     <Search className="w-4 h-4 sm:w-3.5 sm:h-3.5 shrink-0 text-[var(--search-icon)]"/>
                     <span className="truncate font-medium">{item.text}</span>
                   </button>);
