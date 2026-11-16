@@ -295,6 +295,11 @@ html[data-glow="false"] [data-search-style] {
   color: var(--foreground);
 }
 
+.search-suggestion:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: -2px;
+}
+
 .search-suggestion[data-active="true"] {
   background-color: color-mix(in srgb, var(--accent) 12%, transparent);
 }

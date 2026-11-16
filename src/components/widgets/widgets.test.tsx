@@ -72,6 +72,7 @@ describe("Widgets & UI Components", () => {
             const input = container.querySelector("input")!;
             const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
             await act(async () => {
+                input.focus();
                 setValue.call(input, query);
                 input.dispatchEvent(new Event("input", { bubbles: true }));
             });
@@ -118,11 +119,63 @@ describe("Widgets & UI Components", () => {
             const activeRows = () => Array.from(suggestions, (row) => row.dataset.active);
             expect(activeRows()).toEqual(["false", "false"]);
 
-            await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" })));
+            await act(async () => container.querySelector("input")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })));
             expect(activeRows()).toEqual(["true", "false"]);
 
             await act(async () => suggestions[1].dispatchEvent(new MouseEvent("mouseover", { bubbles: true })));
             expect(activeRows()).toEqual(["false", "true"]);
+        });
+
+        it("keeps bang suggestions open through focus transitions and accepts click-only activation", async () => {
+            await enterQuery("!gh");
+            const input = container.querySelector("input")!;
+            const suggestion = container.querySelector<HTMLButtonElement>(".search-suggestion")!;
+            const bang = suggestion.querySelector("span")!.textContent;
+            await act(async () => suggestion.focus());
+            await act(async () => vi.advanceTimersByTimeAsync(200));
+            expect(document.activeElement).toBe(suggestion);
+            expect(suggestion.isConnected).toBe(true);
+            await act(async () => suggestion.click());
+            expect(input.value).toBe(`${bang} `);
+            expect(document.activeElement).toBe(input);
+            expect(suggestion.isConnected).toBe(false);
+        });
+
+        it.each(["pointer", "button", "input"])("opens a query suggestion once through %s activation", async (method) => {
+            localStorage.setItem("atrium-settings-search-new-tab", "true");
+            const open = vi.spyOn(window, "open").mockReturnValue(null);
+            const input = container.querySelector("input")!;
+            const press = (target: HTMLElement, key: string) => target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+            try {
+                fetchSuggestions.mockResolvedValue(["react tutorial", "react reference"]);
+                await enterQuery("react");
+                const [first, second] = container.querySelectorAll<HTMLButtonElement>(".search-suggestion");
+                if (method === "pointer") {
+                    await act(async () => first.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true })));
+                    expect(open).not.toHaveBeenCalled();
+                    await act(async () => first.click());
+                }
+                else {
+                    await act(async () => press(input, "ArrowUp"));
+                    if (method === "button") {
+                        await act(async () => first.focus());
+                        expect(press(first, "Enter")).toBe(true);
+                        expect(open).not.toHaveBeenCalled();
+                        await act(async () => first.click());
+                    }
+                    else {
+                        expect(second.dataset.active).toBe("true");
+                        await act(async () => press(input, "Enter"));
+                    }
+                }
+                expect(open).toHaveBeenCalledOnce();
+                expect(decodeURIComponent(String(open.mock.calls[0][0])).replaceAll("+", " "))
+                    .toContain(method === "input" ? "react reference" : "react tutorial");
+                expect(document.activeElement).toBe(input);
+            }
+            finally {
+                localStorage.removeItem("atrium-settings-search-new-tab");
+            }
         });
 
         it("keeps the clear control out of keyboard navigation when empty", async () => {
