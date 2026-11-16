@@ -449,7 +449,7 @@ export default function WeatherWidget() {
     if (!weather) {
         return (<div className="fixed top-0 left-0 z-40 p-6 sm:p-12 pt-[max(1.5rem,var(--safe-area-top))] pl-[max(1.5rem,var(--safe-area-left))] select-none pointer-events-none">
         <button type="button" onClick={loadWeather} className="animate-fade-in-up flex items-center gap-1.5 text-[var(--foreground)]/40 hover:text-[var(--foreground)]/70 text-[13px] font-light tracking-wide weather-text pointer-events-auto transition-colors duration-200 cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)] rounded-lg px-2 py-1 -mx-2 -my-1" title="Click to load weather (or set city in settings)" aria-label="Load weather">
-          <CloudSun className="w-3.5 h-3.5 shrink-0 animate-pulse" strokeWidth={1.5}/>
+          <CloudSun className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5}/>
           <span>Show Weather</span>
         </button>
       </div>);

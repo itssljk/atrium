@@ -31,11 +31,6 @@ export function applyGlowAttribute(enabled: boolean) {
         return;
     document.documentElement.setAttribute("data-glow", enabled ? "true" : "false");
 }
-export function applyPerfAttribute(enabled: boolean) {
-    if (typeof document === "undefined")
-        return;
-    document.documentElement.setAttribute("data-perf", enabled ? "true" : "false");
-}
 const BG_SOURCE_KEYS = new Set(["bg-type", "bg-curated-url", "bg-url-link", "bg-bing-cache"]);
 export function useAppearanceManager() {
     const [accentColor, setAccentColorState] = useState(() => {
@@ -98,7 +93,6 @@ export function useAppearanceManager() {
         applyThemeAttributes();
         applyAccentAttributes(nextAccent, nextCustom, nextAutoDark);
         applyGlowAttribute(nextGlow);
-        applyPerfAttribute(nextPerf);
     }, []);
     useEffect(() => {
         syncFromSettings();
@@ -151,7 +145,6 @@ export function useAppearanceManager() {
     const setPerf = useCallback((val: boolean) => {
         setPerformanceModeState(val);
         settings.set("settings-perf", val ? "true" : "false");
-        applyPerfAttribute(val);
     }, []);
     return {
         accentColor,

@@ -1,8 +1,9 @@
 "use client";
-import React, { createContext, useContext, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo } from "react";
 import { settings } from "@/utils/settings";
 import { normalizeAccent } from "@/utils/accent";
 import { applyAccentAttributes } from "@/utils/useAppearanceManager";
+import { REDUCED_MOTION_QUERY } from "@/themeBoot";
 interface ThemeContextType {
     theme: "dark";
 }
@@ -10,6 +11,23 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: {
     children: React.ReactNode;
 }) {
+    useLayoutEffect(() => {
+        const preference = window.matchMedia?.(REDUCED_MOTION_QUERY);
+        const syncMotion = () => {
+            const reduced = settings.getValue("settings-perf") || preference?.matches;
+            document.documentElement.dataset.perf = reduced ? "true" : "false";
+        };
+        syncMotion();
+        preference?.addEventListener("change", syncMotion);
+        const unsubscribe = settings.subscribe((key) => {
+            if (key === "settings-perf")
+                syncMotion();
+        });
+        return () => {
+            preference?.removeEventListener("change", syncMotion);
+            unsubscribe();
+        };
+    }, []);
     useEffect(() => {
         const storedAccent = settings.get("accent");
         if (storedAccent && storedAccent !== normalizeAccent(storedAccent)) {

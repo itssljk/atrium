@@ -2,6 +2,9 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ControlHub from "./ControlHub";
+import { ThemeProvider } from "@/components/core/ThemeProvider";
+import { REDUCED_MOTION_QUERY } from "@/themeBoot";
+import { settings } from "@/utils/settings";
 import { openSettingsDrawer } from "@/utils/useSettingsDrawer";
 
 vi.mock("@/utils/backgroundDb", async (importOriginal) => ({
@@ -12,19 +15,25 @@ vi.mock("@/utils/backgroundDb", async (importOriginal) => ({
 describe("Preferences keyboard navigation", () => {
     let container: HTMLDivElement;
     let root: Root;
+    let mediaPreference: EventTarget & { matches: boolean };
 
     beforeEach(async () => {
         vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+        localStorage.clear();
+        mediaPreference = Object.assign(new EventTarget(), { matches: false });
+        vi.stubGlobal("matchMedia", vi.fn(() => mediaPreference));
         container = document.createElement("div");
         document.body.appendChild(container);
         root = createRoot(container);
         await import("./PreferencesDrawer");
-        await act(async () => root.render(<ControlHub />));
+        await act(async () => root.render(<ThemeProvider><ControlHub /></ThemeProvider>));
     });
 
     afterEach(() => {
         act(() => root.unmount());
         container.remove();
+        localStorage.clear();
+        document.documentElement.removeAttribute("data-perf");
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
     });
@@ -80,5 +89,68 @@ describe("Preferences keyboard navigation", () => {
         first.dispatchEvent(shiftTab);
         expect(shiftTab.defaultPrevented).toBe(true);
         expect(document.activeElement).toBe(last);
+    });
+
+    function changeSystemMotion(matches: boolean) {
+        act(() => {
+            mediaPreference.matches = matches;
+            mediaPreference.dispatchEvent(new Event("change"));
+        });
+    }
+
+    it("updates effective motion before the drawer opens and keeps the saved switch independent", async () => {
+        expect(window.matchMedia).toHaveBeenCalledWith(REDUCED_MOTION_QUERY);
+        expect(document.documentElement.dataset.perf).toBe("false");
+        changeSystemMotion(true);
+        expect(document.documentElement.dataset.perf).toBe("true");
+        expect(settings.get("settings-perf")).toBe("");
+
+        await act(async () => openSettingsDrawer());
+        const toggle = container.querySelector<HTMLButtonElement>('[aria-label="Low Motion Mode"]')!;
+        expect(toggle.getAttribute("aria-checked")).toBe("false");
+        await act(async () => toggle.click());
+        expect(toggle.getAttribute("aria-checked")).toBe("true");
+        expect(settings.get("settings-perf")).toBe("true");
+        changeSystemMotion(false);
+        expect(document.documentElement.dataset.perf).toBe("true");
+
+        changeSystemMotion(true);
+        await act(async () => toggle.click());
+        expect(toggle.getAttribute("aria-checked")).toBe("false");
+        expect(settings.get("settings-perf")).toBe("false");
+        expect(document.documentElement.dataset.perf).toBe("true");
+        changeSystemMotion(false);
+        expect(document.documentElement.dataset.perf).toBe("false");
+    });
+
+    it("uses the effective motion at the time a settings search result scrolls into view", async () => {
+        vi.useFakeTimers();
+        const scrollIntoView = vi.fn();
+        const scrollTo = vi.fn();
+        const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+        const originalScrollTo = HTMLElement.prototype.scrollTo;
+        HTMLElement.prototype.scrollIntoView = scrollIntoView;
+        HTMLElement.prototype.scrollTo = scrollTo;
+        try {
+            await act(async () => openSettingsDrawer());
+            const input = container.querySelector<HTMLInputElement>('[aria-label="Search settings"]')!;
+            const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+            await act(async () => {
+                setValue.call(input, "Open in New Tab");
+                input.dispatchEvent(new Event("input", { bubbles: true }));
+            });
+            await act(async () => input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+            changeSystemMotion(true);
+            await act(async () => vi.advanceTimersByTimeAsync(600));
+
+            expect(scrollIntoView).toHaveBeenLastCalledWith({ behavior: "auto", block: "center" });
+            expect(document.activeElement).toBe(container.querySelector("h2"));
+        }
+        finally {
+            HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+            HTMLElement.prototype.scrollTo = originalScrollTo;
+            vi.clearAllTimers();
+            vi.useRealTimers();
+        }
     });
 });
