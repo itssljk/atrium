@@ -1,8 +1,18 @@
+export const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
 export const THEME_BOOT_SCRIPT = `
 (function () {
   try {
     var root = document.documentElement;
     root.setAttribute("data-theme", "dark");
+
+    var savedLowMotion = false;
+    try {
+      var savedPerf = window.localStorage.getItem("atrium-settings-perf") || window.localStorage.getItem("slate-settings-perf");
+      savedLowMotion = savedPerf === "true";
+    } catch (e) {}
+    var systemLowMotion = window.matchMedia && window.matchMedia(${JSON.stringify(REDUCED_MOTION_QUERY)}).matches;
+    root.setAttribute("data-perf", savedLowMotion || systemLowMotion ? "true" : "false");
 
     var accent = "sage";
     try {

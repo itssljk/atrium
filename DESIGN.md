@@ -238,7 +238,7 @@ Settings are presented in the right-side Preferences Drawer, with overview and c
 - **Over imagery:** the `data-bg-custom` weight + shadow boost is mandatory (see §5).
 - **Keyboard:** every surface interactive element keeps a visible focus treatment; Esc closes drawers/modals/pickers; `/` and `Ctrl/⌘K` focus search; ↑/↓/Enter drive suggestions; 1–9 open quicklinks. New controls must slot into this model.
 - **Focus ring:** accent hairline + 1px ring — `--glass-border-focus`. Never remove outline without replacing it.
-- **Reduced motion:** the product-level Low Motion setting disables the effects covered by the `data-perf` rules. Add platform `prefers-reduced-motion` support when implemented; do not assume it is currently provided.
+- **Reduced motion:** the saved Low Motion setting or the system’s `prefers-reduced-motion: reduce` preference activates the `data-perf` rules. The home page applies both before first paint. System changes take effect while the page is open without changing the saved switch. Settings search uses instant scrolling when either preference requests reduced motion.
 
 ---
 
@@ -279,4 +279,4 @@ Settings are presented in the right-side Preferences Drawer, with overview and c
 
 ## Status
 
-This is a forward-looking design guide for the v1.0.0 product direction, not a complete implementation audit. Some details are aspirational and should be reconciled with shipped UI as that UI is revised. Known review areas include small dense labels, mobile hit areas and input sizes, platform reduced-motion support, APCA measurement, and legacy animation loops. Fonts are self-hosted; online features and third-party requests are documented in the Privacy Policy and `THIRD-PARTY-NOTICES.md`.
+This is a forward-looking design guide for the v1.0.0 product direction, not a complete implementation audit. Some details are aspirational and should be reconciled with shipped UI as that UI is revised. Known review areas include small dense labels, mobile hit areas and input sizes, APCA measurement, and legacy animation loops. Fonts are self-hosted; online features and third-party requests are documented in the Privacy Policy and `THIRD-PARTY-NOTICES.md`.

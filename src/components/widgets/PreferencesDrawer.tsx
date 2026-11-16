@@ -101,7 +101,6 @@ export default function PreferencesDrawer({ isOpen, activePane, setActivePane, c
             mainPaneRef.current?.scrollTo({ top: 0 });
         }
     }, [isSearching]);
-    const reducedMotion = appearance.performanceMode;
     const flashElement = (el: Element) => {
         el.classList.remove("setting-flash");
         void el.getBoundingClientRect();
@@ -111,6 +110,7 @@ export default function PreferencesDrawer({ isOpen, activePane, setActivePane, c
         flashTimerRef.current = setTimeout(() => el.classList.remove("setting-flash"), 1500);
     };
     const scrollToElement = (el: Element) => {
+        const reducedMotion = document.documentElement.dataset.perf === "true";
         el.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" });
     };
     const selectSetting = (entry: SettingEntry) => {
