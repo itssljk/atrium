@@ -1,6 +1,7 @@
 const DB_NAME = "atrium-tabs-db";
 const LEGACY_DB_NAME = "slate-tabs-db";
 const STORE_NAME = "backgrounds";
+const UPLOAD_KEY = "custom-upload";
 const DB_VERSION = 1;
 function openDb(name: string): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
@@ -18,9 +19,6 @@ function openDb(name: string): Promise<IDBDatabase> {
             }
         };
     });
-}
-function initDb(): Promise<IDBDatabase> {
-    return openDb(DB_NAME);
 }
 export async function optimizeWallpaperBlob(file: Blob): Promise<Blob> {
     if (typeof window === "undefined" || !file.type.startsWith("image/")) {
@@ -77,68 +75,83 @@ export async function optimizeWallpaperBlob(file: Blob): Promise<Blob> {
         };
     });
 }
-let cachedUploadBlob: Blob | null | undefined;
-export async function saveBackgroundBlob(blob: Blob): Promise<Blob> {
-    const optimized = await optimizeWallpaperBlob(blob);
-    cachedUploadBlob = optimized;
-    const db = await initDb();
+let wallpaperOperation = Promise.resolve();
+
+async function withWallpaperLock<T>(operation: () => Promise<T>): Promise<T> {
+    // Serialize legacy migration, writes, and deletes so a read cannot restore a deleted photo.
+    if (typeof navigator !== "undefined" && navigator.locks)
+        return await navigator.locks.request("atrium-wallpaper-upload", operation);
+    const result = wallpaperOperation.then(operation);
+    wallpaperOperation = result.then(() => {}, () => {});
+    return result;
+}
+
+async function writeWallpaperRecord(dbName: string, write: (store: IDBObjectStore) => void): Promise<void> {
+    const db = await openDb(dbName);
     return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, "readwrite");
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.put(optimized, "custom-upload");
-        request.onsuccess = () => { db.close(); resolve(optimized); };
-        request.onerror = () => { db.close(); reject(request.error); };
+        try {
+            const transaction = db.transaction(STORE_NAME, "readwrite");
+            transaction.oncomplete = () => { db.close(); resolve(); };
+            transaction.onabort = () => { db.close(); reject(transaction.error ?? new Error("Wallpaper storage transaction aborted")); };
+            write(transaction.objectStore(STORE_NAME));
+        }
+        catch (error) {
+            db.close();
+            reject(error);
+        }
     });
 }
-export async function getBackgroundBlob(): Promise<Blob | null> {
-    if (cachedUploadBlob !== undefined)
-        return cachedUploadBlob;
+
+export function saveBackgroundBlob(blob: Blob): Promise<Blob> {
+    return withWallpaperLock(async () => {
+        const optimized = await optimizeWallpaperBlob(blob);
+        await writeWallpaperRecord(DB_NAME, (store) => store.put(optimized, UPLOAD_KEY));
+        return optimized;
+    });
+}
+export function getBackgroundBlob(): Promise<Blob | null> {
+    return withWallpaperLock(readWallpaperBlob);
+}
+
+async function readWallpaperRecord(dbName: string): Promise<Blob | null> {
+    const db = await openDb(dbName);
     try {
-        const db = await initDb();
-        const blob = await new Promise<Blob | null>((resolve, reject) => {
-            const transaction = db.transaction(STORE_NAME, "readonly");
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.get("custom-upload");
-            request.onsuccess = () => { db.close(); resolve(request.result || null); };
-            request.onerror = () => { db.close(); reject(request.error); };
+        return await new Promise<Blob | null>((resolve, reject) => {
+            const request = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(UPLOAD_KEY);
+            request.onsuccess = () => resolve(request.result ?? null);
+            request.onerror = () => reject(request.error);
         });
-        if (blob) {
-            cachedUploadBlob = blob;
+    }
+    finally {
+        db.close();
+    }
+}
+
+async function readWallpaperBlob(): Promise<Blob | null> {
+    try {
+        const blob = await readWallpaperRecord(DB_NAME);
+        if (blob)
             return blob;
-        }
-        try {
-            const legacyDb = await openDb(LEGACY_DB_NAME);
-            const legacyBlob = await new Promise<Blob | null>((resolve, reject) => {
-                const transaction = legacyDb.transaction(STORE_NAME, "readonly");
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.get("custom-upload");
-                request.onsuccess = () => { legacyDb.close(); resolve(request.result || null); };
-                request.onerror = () => { legacyDb.close(); reject(request.error); };
-            });
-            if (legacyBlob) {
-                cachedUploadBlob = legacyBlob;
-                await saveBackgroundBlob(legacyBlob);
-                return legacyBlob;
+        const legacyBlob = await readWallpaperRecord(LEGACY_DB_NAME);
+        if (legacyBlob) {
+            try {
+                await writeWallpaperRecord(DB_NAME, (store) => store.put(legacyBlob, UPLOAD_KEY));
+            }
+            catch (error) {
+                console.warn("Failed to migrate the locally stored wallpaper:", error);
             }
         }
-        catch {
-        }
-        return null;
+        return legacyBlob;
     }
     catch (error) {
         console.error("Failed to load background from IndexedDB:", error);
         return null;
     }
 }
-export async function clearBackgroundBlob(): Promise<void> {
-    cachedUploadBlob = null;
-    const db = await initDb();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, "readwrite");
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.delete("custom-upload");
-        request.onsuccess = () => { db.close(); resolve(); };
-        request.onerror = () => { db.close(); reject(request.error); };
+export function clearBackgroundBlob(): Promise<void> {
+    return withWallpaperLock(async () => {
+        await writeWallpaperRecord(LEGACY_DB_NAME, (store) => store.delete(UPLOAD_KEY));
+        await writeWallpaperRecord(DB_NAME, (store) => store.delete(UPLOAD_KEY));
     });
 }
 export interface BackgroundSettings {

@@ -10,15 +10,17 @@ export const safeLocalStorage = {
         }
         return defaultValue;
     },
-    setItem(key: string, value: string): void {
+    setItem(key: string, value: string): boolean {
         try {
             if (typeof window !== "undefined" && window.localStorage) {
                 window.localStorage.setItem(key, value);
+                return true;
             }
         }
         catch (e) {
             console.warn(`localStorage.setItem failed for key "${key}":`, e);
         }
+        return false;
     },
     removeItem(key: string): void {
         try {

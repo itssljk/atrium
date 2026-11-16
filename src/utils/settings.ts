@@ -39,6 +39,7 @@ interface SyncGlobals {
         };
     };
     chrome?: {
+        runtime?: { lastError?: { message?: string } };
         storage?: {
             sync?: ChromeSyncArea;
             onChanged?: {
@@ -68,10 +69,17 @@ function getSyncArea(): SyncStorageArea | null {
         }
         else if (w.chrome?.storage?.sync) {
             const sync = w.chrome.storage.sync;
+            const finish = <T>(resolve: (value: T) => void, reject: (error: Error) => void) => (value: T) => {
+                const error = w.chrome?.runtime?.lastError;
+                if (error)
+                    reject(new Error(error.message ?? "Browser sync storage failed."));
+                else
+                    resolve(value);
+            };
             area = {
-                get: (keys) => new Promise((resolve) => sync.get(keys, resolve)),
-                set: (items) => new Promise((resolve) => sync.set(items, () => resolve())),
-                remove: (keys) => new Promise((resolve) => sync.remove(keys, () => resolve())),
+                get: (keys) => new Promise((resolve, reject) => sync.get(keys, finish(resolve, reject))),
+                set: (items) => new Promise((resolve, reject) => sync.set(items, finish(resolve, reject))),
+                remove: (keys) => new Promise((resolve, reject) => sync.remove(keys, finish(resolve, reject))),
             };
         }
     }
@@ -121,22 +129,34 @@ function scheduleNotify(key: string): void {
 }
 const pendingSyncWrites = new Map<string, string>();
 let syncFlushTimer: ReturnType<typeof setTimeout> | null = null;
+const SYNC_LOCK = "atrium-settings-sync";
+
+async function withSyncLock(operation: () => Promise<void>): Promise<void> {
+    if (navigator.locks)
+        await navigator.locks.request(SYNC_LOCK, operation);
+    else
+        await operation();
+}
+
 function flushSyncWrites(): void {
     syncFlushTimer = null;
     if (pendingSyncWrites.size === 0)
         return;
-    const area = getSyncArea();
-    if (!area) {
-        pendingSyncWrites.clear();
-        return;
-    }
-    const items: Record<string, string> = {};
-    pendingSyncWrites.forEach((value, key) => {
-        items[key] = value;
-    });
+    const writes = new Map(pendingSyncWrites);
     pendingSyncWrites.clear();
-    void area.set(items).catch(() => {
-    });
+    void withSyncLock(async () => {
+        const area = getSyncArea();
+        if (!area || !settings.isSyncEnabled())
+            return;
+        const items: Record<string, string> = {};
+        for (const [key, value] of writes) {
+            // A reset or a later write may have invalidated this queued value.
+            if (settings.get(key) === value)
+                items[fullKey(key)] = value;
+        }
+        if (Object.keys(items).length > 0)
+            await area.set(items);
+    }).catch(() => {});
 }
 function scheduleSyncWrite(key: string, value: string): void {
     pendingSyncWrites.set(key, value);
@@ -193,32 +213,34 @@ export const settings = {
         return getSyncArea() !== null;
     },
     async syncAllToRemote(): Promise<void> {
-        const area = getSyncArea();
-        if (!area)
-            return;
-        const items: Record<string, string> = {};
-        for (const key of SYNC_KEYS) {
-            const val = settings.get(key);
-            if (val !== "") {
-                items[fullKey(key)] = val;
-            }
+        try {
+            await withSyncLock(async () => {
+                const area = getSyncArea();
+                if (!area || !settings.isSyncEnabled())
+                    return;
+                const items: Record<string, string> = {};
+                for (const key of SYNC_KEYS) {
+                    const val = settings.get(key);
+                    if (val !== "")
+                        items[fullKey(key)] = val;
+                }
+                if (Object.keys(items).length > 0)
+                    await area.set(items);
+            });
         }
-        if (Object.keys(items).length > 0) {
-            try {
-                await area.set(items);
-            }
-            catch (e) {
-                console.warn("Failed to push settings to sync storage:", e);
-            }
+        catch (e) {
+            console.warn("Failed to push settings to sync storage:", e);
         }
     },
-    set(key: string, value: string): void {
-        safeLocalStorage.setItem(fullKey(key), value);
+    set(key: string, value: string): boolean {
+        if (!safeLocalStorage.setItem(fullKey(key), value))
+            return false;
         if (SYNC_KEYS.has(key) && settings.isSyncEnabled()) {
             markOwnWrite(fullKey(key));
-            scheduleSyncWrite(fullKey(key), value);
+            scheduleSyncWrite(key, value);
         }
         scheduleNotify(key);
+        return true;
     },
     setValue(key: SettingsKey, value: unknown): void {
         const def = SETTINGS_SCHEMA[key];
@@ -229,15 +251,12 @@ export const settings = {
         safeLocalStorage.removeItem(fullKey(key));
         safeLocalStorage.removeItem(`${LEGACY_STORAGE_PREFIX}${key}`);
         if (SYNC_KEYS.has(key) && settings.isSyncEnabled()) {
-            pendingSyncWrites.delete(fullKey(key));
+            pendingSyncWrites.delete(key);
             markOwnWrite(fullKey(key));
-            const area = getSyncArea();
-            if (area) {
-                void area.remove(fullKey(key)).catch(() => {
-                });
-                void area.remove(`${LEGACY_STORAGE_PREFIX}${key}`).catch(() => {
-                });
-            }
+            void withSyncLock(async () => {
+                if (settings.isSyncEnabled() && settings.get(key) === "")
+                    await getSyncArea()?.remove([fullKey(key), `${LEGACY_STORAGE_PREFIX}${key}`]);
+            }).catch(() => {});
         }
         scheduleNotify(key);
     },
@@ -247,6 +266,52 @@ export const settings = {
             listeners.delete(listener);
         };
     },
+    async resetUserSettings(): Promise<void> {
+        const area = getSyncArea();
+        if (settings.isSyncEnabled() && (!area || !navigator.locks))
+            throw new Error("Browser sync storage could not be safely accessed. Settings were kept.");
+
+        await withSyncLock(async () => {
+            let removedSyncedSettings = false;
+            const storage = window.localStorage;
+            // Check local access before attempting a destructive change to sync storage.
+            storage.getItem(fullKey("settings-sync"));
+            if (settings.isSyncEnabled()) {
+                if (!area)
+                    throw new Error("Browser sync storage is unavailable. Settings were kept.");
+                try {
+                    await area.remove([...SYNC_KEYS].flatMap((key) => [fullKey(key), `${LEGACY_STORAGE_PREFIX}${key}`]));
+                    removedSyncedSettings = true;
+                }
+                catch {
+                    throw new Error("Could not remove settings from browser sync. Local settings and wallpaper were kept.");
+                }
+            }
+
+            try {
+                // Turn off sync after removal, before releasing the lock to other tabs.
+                storage.removeItem(`${LEGACY_STORAGE_PREFIX}settings-sync`);
+                storage.removeItem(fullKey("settings-sync"));
+                scheduleNotify("settings-sync");
+                for (const key of [...Object.keys(SETTINGS_SCHEMA), "disabled-engines"]) {
+                    if (key === "settings-sync")
+                        continue;
+                    storage.removeItem(fullKey(key));
+                    storage.removeItem(`${LEGACY_STORAGE_PREFIX}${key}`);
+                    scheduleNotify(key);
+                }
+                if (syncFlushTimer)
+                    clearTimeout(syncFlushTimer);
+                syncFlushTimer = null;
+                pendingSyncWrites.clear();
+            }
+            catch {
+                throw new Error(removedSyncedSettings
+                    ? "Synced settings were removed, but local settings could not be fully reset. The wallpaper was kept."
+                    : "Local settings could not be fully reset. The wallpaper was kept.");
+            }
+        });
+    },
     async hydrate(): Promise<void> {
         if (!settings.isSyncEnabled())
             return;
@@ -254,17 +319,23 @@ export const settings = {
         if (!area)
             return;
         try {
-            const all = await area.get(null);
-            for (const [key, value] of Object.entries(all ?? {})) {
-                const logical = logicalKey(key);
-                if (!logical || !SYNC_KEYS.has(logical))
-                    continue;
-                const nextValue = String(value ?? "");
-                if (safeLocalStorage.getItem(fullKey(logical)) !== nextValue) {
-                    safeLocalStorage.setItem(fullKey(logical), nextValue);
-                    scheduleNotify(logical);
+            await withSyncLock(async () => {
+                if (!settings.isSyncEnabled())
+                    return;
+                const all = await area.get(null);
+                if (!settings.isSyncEnabled())
+                    return;
+                for (const [key, value] of Object.entries(all ?? {})) {
+                    const logical = logicalKey(key);
+                    if (!logical || !SYNC_KEYS.has(logical))
+                        continue;
+                    const nextValue = String(value ?? "");
+                    if (safeLocalStorage.getItem(fullKey(logical)) !== nextValue) {
+                        safeLocalStorage.setItem(fullKey(logical), nextValue);
+                        scheduleNotify(logical);
+                    }
                 }
-            }
+            });
         }
         catch (e) {
             console.warn("Failed to hydrate settings from sync storage:", e);
@@ -280,29 +351,30 @@ export const settings = {
         const handler = (changes: Record<string, {
             newValue?: unknown;
             oldValue?: unknown;
-        }>) => {
-            if (!settings.isSyncEnabled())
+        }>, areaName: string) => {
+            if (areaName !== "sync" || !settings.isSyncEnabled())
                 return;
-            for (const [key, change] of Object.entries(changes)) {
-                if (ownWritesInFlight.has(key)) {
-                    ownWritesInFlight.delete(key);
-                    continue;
-                }
-                const logical = logicalKey(key);
-                if (!logical || !SYNC_KEYS.has(logical))
-                    continue;
-                if (change.newValue === undefined) {
-                    safeLocalStorage.removeItem(fullKey(logical));
-                    safeLocalStorage.removeItem(`${LEGACY_STORAGE_PREFIX}${logical}`);
-                }
-                else {
-                    const nextValue = String(change.newValue);
-                    if (safeLocalStorage.getItem(fullKey(logical)) !== nextValue) {
-                        safeLocalStorage.setItem(fullKey(logical), nextValue);
+            void withSyncLock(async () => {
+                if (!settings.isSyncEnabled())
+                    return;
+                for (const [key, change] of Object.entries(changes)) {
+                    if (ownWritesInFlight.delete(key))
+                        continue;
+                    const logical = logicalKey(key);
+                    if (!logical || !SYNC_KEYS.has(logical))
+                        continue;
+                    if (change.newValue === undefined) {
+                        safeLocalStorage.removeItem(fullKey(logical));
+                        safeLocalStorage.removeItem(`${LEGACY_STORAGE_PREFIX}${logical}`);
                     }
+                    else {
+                        const nextValue = String(change.newValue);
+                        if (safeLocalStorage.getItem(fullKey(logical)) !== nextValue)
+                            safeLocalStorage.setItem(fullKey(logical), nextValue);
+                    }
+                    scheduleNotify(logical);
                 }
-                scheduleNotify(logical);
-            }
+            }).catch((error) => console.warn("Failed to apply synced settings:", error));
         };
         onChanged.addListener(handler);
     },

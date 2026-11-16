@@ -1,5 +1,6 @@
-import { settings } from "./settings";
+import { settings, STORAGE_PREFIX, LEGACY_STORAGE_PREFIX } from "./settings";
 import { SETTINGS_SCHEMA } from "./settingsSchema";
+import { clearBackgroundBlob, getBackgroundBlob } from "./backgroundDb";
 import { siteConfig } from "@/config/site";
 export interface SettingsBackup {
     app: string;
@@ -7,9 +8,9 @@ export interface SettingsBackup {
     timestamp: string;
     settings: Record<string, string>;
 }
-const BACKUP_KEYS: string[] = Object.values(SETTINGS_SCHEMA)
-    .filter((def) => def.sync)
-    .map((def) => def.key);
+// Sync consent is device-local. Derived colors and daily wallpaper cache are regenerated.
+const BACKUP_KEYS = new Set(Object.keys(SETTINGS_SCHEMA).filter((key) =>
+    key !== "settings-sync" && key !== "auto-accent-color" && key !== "bg-bing-cache"));
 export function getExportData(): SettingsBackup {
     const settingsMap: Record<string, string> = {};
     BACKUP_KEYS.forEach((key) => {
@@ -53,8 +54,9 @@ export interface ImportResult {
     success: boolean;
     importedCount: number;
     error?: string;
+    warning?: string;
 }
-export function importSettingsFromJson(jsonString: string): ImportResult {
+export async function importSettingsFromJson(jsonString: string): Promise<ImportResult> {
     try {
         const parsed = JSON.parse(jsonString);
         if (!parsed || typeof parsed !== "object") {
@@ -64,23 +66,31 @@ export function importSettingsFromJson(jsonString: string): ImportResult {
         if (typeof payload !== "object" || payload === null) {
             return { success: false, importedCount: 0, error: "No settings found in file." };
         }
-        const knownKeys = new Set(BACKUP_KEYS);
-        let count = 0;
-        Object.entries(payload).forEach(([rawKey, val]) => {
-            const logicalKey = rawKey.startsWith("atrium-")
-                ? rawKey.slice(7)
-                : rawKey.startsWith("slate-")
-                    ? rawKey.slice(6)
+        const imported = new Map<string, string>();
+        for (const [rawKey, val] of Object.entries(payload)) {
+            const logicalKey = rawKey.startsWith(STORAGE_PREFIX)
+                ? rawKey.slice(STORAGE_PREFIX.length)
+                : rawKey.startsWith(LEGACY_STORAGE_PREFIX)
+                    ? rawKey.slice(LEGACY_STORAGE_PREFIX.length)
                     : rawKey;
-            if (knownKeys.has(logicalKey) && typeof val === "string") {
-                settings.set(logicalKey, val);
-                count++;
-            }
-        });
-        if (count === 0) {
+            if (BACKUP_KEYS.has(logicalKey) && typeof val === "string")
+                imported.set(logicalKey, val);
+        }
+        if (imported.size === 0) {
             return { success: false, importedCount: 0, error: "No recognized Atrium Tabs settings found in backup." };
         }
-        return { success: true, importedCount: count };
+        let warning: string | undefined;
+        if (imported.get("bg-type") === "upload" && !await getBackgroundBlob()) {
+            imported.set("bg-type", SETTINGS_SCHEMA["bg-type"].default);
+            warning = "This backup refers to an uploaded wallpaper. No local upload was available, so Atrium selected the default background.";
+        }
+        let count = 0;
+        for (const [key, value] of imported) {
+            if (!settings.set(key, value))
+                return { success: false, importedCount: count, error: "Could not save the remaining settings. Check browser storage and try again." };
+            count++;
+        }
+        return { success: true, importedCount: count, warning };
     }
     catch (e) {
         return {
@@ -90,8 +100,12 @@ export function importSettingsFromJson(jsonString: string): ImportResult {
         };
     }
 }
-export function resetAllSettings(): void {
-    BACKUP_KEYS.forEach((key) => {
-        settings.remove(key);
-    });
+export async function resetAllSettings(): Promise<void> {
+    await settings.resetUserSettings();
+    try {
+        await clearBackgroundBlob();
+    }
+    catch {
+        throw new Error("Settings were reset and sync is off, but Atrium could not remove the uploaded wallpaper. Try resetting again.");
+    }
 }
