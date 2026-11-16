@@ -32,69 +32,59 @@ export default function SupportPane({ onNavigate }: { onNavigate: (pane: Setting
             setCopyStatus("failure");
         }
     };
-    const [importStatus, setImportStatus] = useState<{
-        success?: boolean;
-        message?: string;
+    const [backupStatus, setBackupStatus] = useState<{
+        success: boolean;
+        message: string;
+        reload?: boolean;
     } | null>(null);
     const [confirmReset, setConfirmReset] = useState(false);
-    const fileInputRef = useState<HTMLInputElement | null>(null);
+    const [operation, setOperation] = useState<"restore" | "reset" | null>(null);
+    const busy = operation !== null;
     const handleExport = () => {
         const success = exportSettingsToFile();
-        if (success) {
-            setImportStatus({ success: true, message: "Settings exported successfully." });
-            setTimeout(() => setImportStatus(null), 3000);
-        }
-        else {
-            setImportStatus({ success: false, message: "Failed to export settings." });
-            setTimeout(() => setImportStatus(null), 3000);
-        }
+        setBackupStatus({ success, message: success ? "Settings backup download started." : "Could not export settings." });
     };
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file)
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.currentTarget.files?.[0];
+        e.currentTarget.value = "";
+        if (!file || busy)
             return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const content = event.target?.result;
-            if (typeof content === "string") {
-                const result = importSettingsFromJson(content);
-                if (result.success) {
-                    setImportStatus({
-                        success: true,
-                        message: `Successfully restored ${result.importedCount} settings. Refreshing...`,
-                    });
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                }
-                else {
-                    setImportStatus({
-                        success: false,
-                        message: result.error || "Failed to import settings file.",
-                    });
-                    setTimeout(() => setImportStatus(null), 4000);
-                }
-            }
-        };
-        reader.onerror = () => {
-            setImportStatus({ success: false, message: "Failed to read file." });
-            setTimeout(() => setImportStatus(null), 3000);
-        };
-        reader.readAsText(file);
-        e.target.value = "";
+        setOperation("restore");
+        setBackupStatus(null);
+        try {
+            const result = await importSettingsFromJson(await file.text());
+            const count = `Restored ${result.importedCount} ${result.importedCount === 1 ? "setting" : "settings"}.`;
+            const detail = result.success ? result.warning : (result.error ?? "Could not restore settings.");
+            const message = [result.importedCount > 0 ? count : "", detail].filter(Boolean).join(" ");
+            setBackupStatus({ success: result.success, message, reload: result.importedCount > 0 });
+        }
+        catch {
+            setBackupStatus({ success: false, message: "Could not read the settings backup." });
+        }
+        finally {
+            setOperation(null);
+        }
     };
-    const handleReset = () => {
+    const handleReset = async () => {
+        if (busy)
+            return;
         if (!confirmReset) {
             setConfirmReset(true);
-            setTimeout(() => setConfirmReset(false), 4000);
             return;
         }
-        resetAllSettings();
         setConfirmReset(false);
-        setImportStatus({ success: true, message: "Settings reset to defaults. Reloading..." });
-        setTimeout(() => {
-            window.location.reload();
-        }, 800);
+        setOperation("reset");
+        setBackupStatus(null);
+        try {
+            await resetAllSettings();
+            setBackupStatus({ success: true, message: "Settings reset to defaults. Settings Sync is off and the uploaded wallpaper was cleared.", reload: true });
+        }
+        catch (error) {
+            setBackupStatus({ success: false, message: error instanceof Error ? error.message : "Could not finish resetting settings." });
+        }
+        finally {
+            setOperation(null);
+        }
     };
     return (<div className="flex flex-col gap-5">
       <section className="flex flex-col gap-3 p-4 rounded-2xl bg-[var(--foreground)]/2 border border-[var(--glass-border)]/30">
@@ -141,33 +131,41 @@ export default function SupportPane({ onNavigate }: { onNavigate: (pane: Setting
             <Archive className="w-4 h-4 text-[var(--accent)]"/> Backup &amp; Reset
           </span>
           <span className="text-[11px] text-[var(--foreground)]/50">
-            Export your settings to a JSON file or restore a previous backup
+            Export or restore settings as JSON. Backup files exclude uploaded wallpaper images and the Settings Sync switch.
           </span>
         </div>
 
-        {importStatus && (<div className={`p-2.5 rounded-xl text-xs font-medium border ${importStatus.success
+        <div role="status" className={backupStatus ? `p-2.5 rounded-xl text-xs font-medium border ${backupStatus.success
                 ? "bg-[var(--accent)]/10 text-[var(--accent)] border-[var(--accent)]/30"
-                : "bg-rose-500/10 text-rose-400 border-rose-500/20"}`}>
-            {importStatus.message}
-          </div>)}
+                : "bg-rose-500/10 text-rose-400 border-rose-500/20"}` : undefined}>
+          {operation === "reset" ? "Resetting settings…" : operation === "restore" ? "Restoring settings…" : backupStatus?.message}
+        </div>
+        {backupStatus?.reload && <button type="button" onClick={() => window.location.reload()} className="self-start text-xs font-medium text-[var(--accent)] underline cursor-pointer">
+          Reload to apply settings
+        </button>}
+        {confirmReset && <p id="reset-settings-warning" role="alert" className="text-sm leading-relaxed text-[var(--foreground)]">
+          Reset restores all preferences to their defaults, permanently removes this device’s uploaded wallpaper, and turns off Settings Sync.
+          If Settings Sync is on, reset also removes Atrium’s synced settings from browser sync storage, affecting other devices that use it.
+        </p>}
 
         <div className="flex items-center gap-2 flex-wrap pt-1">
-          <button type="button" onClick={handleExport} className="px-3 py-1.5 rounded-xl bg-[var(--foreground)]/5 hover:bg-[var(--foreground)]/10 text-[var(--foreground)]/80 text-xs font-medium flex items-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 border border-[var(--glass-border)]/40">
+          <button type="button" onClick={handleExport} disabled={busy || confirmReset} className="px-3 py-1.5 rounded-xl bg-[var(--foreground)]/5 hover:bg-[var(--foreground)]/10 text-[var(--foreground)]/80 text-xs font-medium flex items-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 border border-[var(--glass-border)]/40 disabled:opacity-50">
             <Download className="w-3.5 h-3.5 text-[var(--accent)]"/>
             <span>Export Backup</span>
           </button>
 
-          <label className="px-3 py-1.5 rounded-xl bg-[var(--foreground)]/5 hover:bg-[var(--foreground)]/10 text-[var(--foreground)]/80 text-xs font-medium flex items-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 border border-[var(--glass-border)]/40">
+          <label className="px-3 py-1.5 rounded-xl bg-[var(--foreground)]/5 hover:bg-[var(--foreground)]/10 text-[var(--foreground)]/80 text-xs font-medium flex items-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 border border-[var(--glass-border)]/40 has-[:disabled]:opacity-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--accent)]">
             <Upload className="w-3.5 h-3.5 text-[var(--accent)]"/>
             <span>Restore Backup</span>
-            <input type="file" accept=".json" onChange={handleFileChange} className="hidden"/>
+            <input type="file" accept=".json" onChange={handleFileChange} disabled={busy || confirmReset} className="sr-only"/>
           </label>
 
-          <button type="button" onClick={handleReset} className={`ml-auto px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 border ${confirmReset
-            ? "bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse"
+          {confirmReset && <button type="button" onClick={() => setConfirmReset(false)} className="px-3 py-1.5 rounded-xl text-xs font-medium cursor-pointer hover:bg-[var(--foreground)]/5">Cancel</button>}
+          <button type="button" onClick={handleReset} disabled={busy} aria-describedby={confirmReset ? "reset-settings-warning" : undefined} className={`ml-auto px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 border disabled:opacity-50 ${confirmReset
+            ? "bg-rose-500/20 text-rose-400 border-rose-500/40"
             : "bg-[var(--foreground)]/3 text-[var(--foreground)]/60 hover:text-rose-400 hover:bg-rose-500/10 border-[var(--glass-border)]/30"}`}>
             <RotateCcw className="w-3.5 h-3.5"/>
-            <span>{confirmReset ? "Click to Confirm Reset" : "Reset Settings"}</span>
+            <span>{confirmReset ? "Confirm Reset" : "Reset Settings"}</span>
           </button>
         </div>
       </div>

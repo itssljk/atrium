@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { optimizeWallpaperBlob, DEFAULT_BG_SETTINGS } from "./backgroundDb";
+import { afterEach, describe, it, expect, vi } from "vitest";
+import { clearBackgroundBlob, optimizeWallpaperBlob, DEFAULT_BG_SETTINGS } from "./backgroundDb";
 describe("backgroundDb utilities", () => {
     it("provides default background settings", () => {
         expect(DEFAULT_BG_SETTINGS.type).toBe("default");
@@ -19,5 +19,54 @@ describe("backgroundDb utilities", () => {
         const textBlob = new Blob(["hello"], { type: "text/plain" });
         const result = await optimizeWallpaperBlob(textBlob);
         expect(result).toBe(textBlob);
+    });
+});
+
+describe("clearBackgroundBlob", () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    function mockWallpaperStorage(abortDatabase?: string) {
+        const deleted: Array<[string, string]> = [];
+        vi.stubGlobal("indexedDB", {
+            open(name: string) {
+                const transaction = {
+                    oncomplete: () => {},
+                    onabort: () => {},
+                    error: new DOMException("Deletion aborted", "AbortError"),
+                    objectStore: () => ({ delete(key: string) {
+                        queueMicrotask(() => {
+                            if (name === abortDatabase) {
+                                transaction.onabort();
+                                return;
+                            }
+                            deleted.push([name, key]);
+                            transaction.oncomplete();
+                        });
+                    } }),
+                };
+                const request = {
+                    onsuccess: () => {},
+                    result: { transaction: () => transaction, close: () => {} },
+                };
+                queueMicrotask(() => request.onsuccess());
+                return request;
+            },
+        });
+        return deleted;
+    }
+
+    it("waits for the deletion of only the custom upload in both databases", async () => {
+        const deleted = mockWallpaperStorage();
+        await clearBackgroundBlob();
+        expect(deleted).toEqual([
+            ["slate-tabs-db", "custom-upload"],
+            ["atrium-tabs-db", "custom-upload"],
+        ]);
+    });
+
+    it("rejects if IndexedDB aborts the deletion transaction", async () => {
+        const deleted = mockWallpaperStorage("atrium-tabs-db");
+        await expect(clearBackgroundBlob()).rejects.toThrow("Deletion aborted");
+        expect(deleted).toEqual([["slate-tabs-db", "custom-upload"]]);
     });
 });
