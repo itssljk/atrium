@@ -226,6 +226,91 @@ body::before {
   transform: scale(1.006);
 }
 
+[data-search-style] {
+  --search-input-opacity: 100%;
+  --search-input-tint-weight: 25%;
+  --search-dropdown-opacity: 100%;
+  --search-dropdown-tint-weight: 22%;
+  --search-secondary-text: color-mix(in srgb, var(--foreground) 95%, transparent);
+  --search-icon: color-mix(in srgb, var(--foreground) 80%, transparent);
+  --search-focus-glow: 0 0 28px var(--accent-glow);
+}
+
+[data-search-style="glass"] {
+  /* Mix the tint into a dark base first, then let the wallpaper show through. */
+  --search-input-opacity: 78%;
+  --search-input-tint-weight: 15%;
+  --search-dropdown-opacity: 95%;
+  --search-dropdown-tint-weight: 16%;
+}
+
+html[data-bg-readability="true"][data-bg-bright="true"]:not([data-perf="true"]) [data-search-style="glass"] {
+  --search-input-opacity: 86%;
+}
+
+html[data-perf="true"] [data-search-style="glass"] {
+  --search-input-opacity: 100%;
+  --search-dropdown-opacity: 100%;
+}
+
+html[data-glow="false"] [data-search-style] {
+  --search-focus-glow: 0 0 0 transparent;
+}
+
+[data-search-style] .search-input {
+  --search-input-color: color-mix(in srgb, var(--search-tint, var(--solid-bg)) var(--search-input-tint-weight), var(--solid-bg));
+  background-color: color-mix(in srgb, var(--search-input-color) var(--search-input-opacity), transparent);
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+.search-input::placeholder {
+  color: var(--search-secondary-text);
+  font-weight: 400;
+  opacity: 1;
+}
+
+[data-search-style] .search-input:focus {
+  border-color: var(--accent);
+  outline: 1px solid var(--foreground);
+  box-shadow: 0 0 0 2px var(--background), var(--search-focus-glow);
+}
+
+.search-action {
+  color: var(--search-icon);
+}
+
+.search-action:focus-visible {
+  outline: 1px solid var(--foreground);
+  box-shadow: 0 0 0 2px var(--background);
+}
+
+[data-search-style] .search-suggestions {
+  --search-dropdown-color: color-mix(in srgb, var(--search-tint, var(--solid-bg-dropdown)) var(--search-dropdown-tint-weight), var(--solid-bg-dropdown));
+  background-color: color-mix(in srgb, var(--search-dropdown-color) var(--search-dropdown-opacity), transparent);
+}
+
+.search-suggestion {
+  position: relative;
+  color: var(--foreground);
+}
+
+.search-suggestion[data-active="true"] {
+  background-color: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.search-suggestion[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 5px;
+  inset-block: 0;
+  margin-block: auto;
+  height: 16px;
+  border-inline-start: 2px solid var(--foreground);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -364,29 +449,19 @@ html[data-bg-custom="true"] .weather-location {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
-html[data-bg-custom="true"] .glass-input {
+html[data-bg-custom="true"] .glass-input:not(.search-input) {
   background: rgba(8, 9, 18, 0.45);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
 
-html[data-bg-readability="true"] .glass-input {
+html[data-bg-readability="true"] .glass-input:not(.search-input) {
   background: rgba(8, 9, 18, 0.55);
 }
 
-html[data-bg-readability="true"][data-bg-bright="true"] .glass-input {
+html[data-bg-readability="true"][data-bg-bright="true"] .glass-input:not(.search-input) {
   background: rgba(8, 9, 18, 0.7);
   border-color: rgba(255, 255, 255, 0.12);
-}
-
-html[data-bg-custom="true"] .glass-input::placeholder {
-  color: rgba(248, 249, 252, 0.75);
-}
-
-html[data-bg-custom="true"] .search-shortcut-kbd {
-  border-color: rgba(248, 249, 252, 0.25) !important;
-  color: rgba(248, 249, 252, 0.75) !important;
-  background-color: rgba(0, 0, 0, 0.25) !important;
 }
 
 html[data-bg-custom="true"] .quicklink-label {
@@ -623,7 +698,7 @@ html[data-bg-custom="true"] .customize-trigger-btn:hover {
   opacity: 0 !important;
 }
 
-[data-glow="false"] .glass-input:focus {
+[data-glow="false"] .glass-input:not(.search-input):focus {
   box-shadow: var(--glass-inset-shadow), 0 0 0 1px var(--accent) !important;
 }
 
