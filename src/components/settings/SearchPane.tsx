@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, useId } from "react";
 import { ExternalLink, Sparkles, Trash2, Plus, ArrowUp, ArrowDown, Pencil, X, Check, ShieldCheck, Leaf, Eye, Wrench, Search, } from "lucide-react";
 import { createPortal } from "react-dom";
 import { SEARCH_BANGS, faviconUrl } from "@/config/searchEngines";
@@ -24,14 +24,18 @@ function PrivacyIcon({ level }: {
             return <Eye className={`${cls} text-[var(--foreground)]/35`} strokeWidth={1.75}/>;
     }
 }
-function renderPrivacyTag(level?: string, label?: string, detail?: string) {
+function renderPrivacyTag(id: string, level?: string, label?: string, detail?: string) {
     const text = label || "Standard";
     const tooltip = detail ? `${text}: ${detail}` : text;
-    return (<span role="img" aria-label={`Privacy: ${text}`} title={tooltip} className="inline-flex items-center select-none">
+    return (<span id={id} role="img" aria-label={`Privacy: ${text}`} title={tooltip} className="inline-flex items-center select-none">
       <PrivacyIcon level={level}/>
     </span>);
 }
 export default function SearchPane({ search, drawerOpen }: SearchPaneProps) {
+    const providerGroupId = useId();
+    const selectedProviderRef = useRef<HTMLInputElement>(null);
+    const selectedProvider = search.availableEngines.find((engine) => engine.id === search.searchEngineId)
+        ?? search.availableEngines[0];
     const [isViewingDirectory, setIsViewingDirectory] = useState(false);
     const [directoryFilter, setDirectoryFilter] = useState("");
     const directoryFilterInputRef = useRef<HTMLInputElement>(null);
@@ -184,42 +188,48 @@ export default function SearchPane({ search, drawerOpen }: SearchPaneProps) {
 
         <div data-anchor="search-provider" className="flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[var(--foreground)]/80">Search Provider</span>
+            <span id={providerGroupId} className="text-xs font-semibold text-[var(--foreground)]/80">Search Provider</span>
             {search.deletedEngineIds.length > 0 && (<button onClick={search.restoreDefaultEngines} className="text-[10px] font-semibold text-[var(--accent)] hover:underline cursor-pointer active:scale-95">
                 Restore Defaults
               </button>)}
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {search.availableEngines.map((engine) => {
-            const isSel = search.searchEngineId === engine.id;
-            return (<div key={engine.id} onClick={() => search.setSearchEngineId(engine.id)} className={`p-3 rounded-xl border text-left flex flex-col justify-between gap-2.5 transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.02] active:scale-[0.97] cursor-pointer group select-none ${isSel
+          <div role="radiogroup" aria-labelledby={providerGroupId} className="grid grid-cols-2 gap-2">
+            {search.availableEngines.map((engine, index) => {
+            const isSel = selectedProvider?.id === engine.id;
+            const privacyId = `${providerGroupId}-privacy-${index}`;
+            return (<div key={engine.id} className={`relative rounded-xl border text-left transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.02] active:scale-[0.97] select-none ${isSel
                     ? "bg-[var(--foreground)]/8 border-[var(--accent)] text-[var(--foreground)] shadow-sm"
                     : "bg-[var(--foreground)]/3 border-[var(--glass-border)] text-[var(--foreground)]/70 hover:bg-[var(--foreground)]/5"}`}>
-                  <div className="flex items-center justify-between gap-2 w-full">
-                    <div className="flex items-center gap-2 min-w-0">
+                <label className="flex h-full flex-col justify-between gap-2.5 rounded-xl p-3 cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--accent)]">
+                  <input ref={isSel ? selectedProviderRef : undefined} type="radio" name={providerGroupId}
+                    value={engine.id} checked={isSel} aria-label={engine.name} aria-describedby={privacyId}
+                    onChange={() => search.setSearchEngineId(engine.id)} className="sr-only"/>
+                  <span className={`flex items-center justify-between gap-2 w-full ${isSel ? "" : "min-h-5.5 pr-7"}`}>
+                    <span className="flex items-center gap-2 min-w-0">
                       <img src={faviconUrl(engine.domain || "example.com", 32)} alt="" className="w-4 h-4 object-contain filter dark:brightness-95 shrink-0"/>
                       <span className={`text-xs font-semibold truncate ${isSel ? "text-[var(--accent)]" : "text-[var(--foreground)]/90"}`}>
                         {engine.name}
                       </span>
-                    </div>
+                    </span>
+                    {isSel && <Check aria-hidden="true" className="w-3.5 h-3.5 shrink-0 text-[var(--accent)] stroke-[2.5]"/>}
+                  </span>
 
-                    <div className="flex items-center gap-1 shrink-0">
-                      {isSel ? (<Check className="w-3.5 h-3.5 text-[var(--accent)] stroke-[2.5]"/>) : (<button type="button" onClick={(e) => {
-                        e.stopPropagation();
-                        search.deleteEngine(engine.id);
-                    }} className="p-1 rounded text-[var(--foreground)]/30 hover:text-rose-400 active:scale-90 transition-colors cursor-pointer" title="Delete engine">
-                          <Trash2 className="w-3.5 h-3.5"/>
-                        </button>)}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 w-full">
-                    {renderPrivacyTag(engine.privacyLevel, engine.privacyLabel, engine.privacyDetail)}
+                  <span className="flex items-center justify-between gap-2 w-full">
+                    {renderPrivacyTag(privacyId, engine.privacyLevel, engine.privacyLabel, engine.privacyDetail)}
                     <span className="text-[10px] font-mono text-[var(--foreground)]/35 truncate">
                       {engine.domain}
                     </span>
-                  </div>
-                </div>);
+                  </span>
+                </label>
+                {!isSel && (<button type="button" onClick={(e) => {
+                    if (document.activeElement === e.currentTarget)
+                        selectedProviderRef.current?.focus();
+                    search.deleteEngine(engine.id);
+                }} className="absolute right-3 top-3 p-1 rounded text-[var(--foreground)]/30 hover:text-rose-400 active:scale-90 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                  aria-label={`Delete ${engine.name}`} title={`Delete ${engine.name}`}>
+                    <Trash2 aria-hidden="true" className="w-3.5 h-3.5"/>
+                </button>)}
+              </div>);
         })}
           </div>
         </div>
