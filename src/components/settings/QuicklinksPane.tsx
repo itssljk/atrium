@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { Plus, ArrowUp, ArrowDown, Pencil, Trash2 } from "lucide-react";
 import Favicon from "@/components/shared/Favicon";
 import type { Quicklink } from "@/utils/quicklinks";
@@ -8,13 +8,33 @@ import type { QuicklinksManager } from "./types";
 interface QuicklinksPaneProps {
     quicklinksManager: QuicklinksManager;
 }
+const shortcutInputClass = "h-11 sm:h-8.5 min-w-0 w-full px-3 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-base sm:text-xs text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]";
+const shortcutActionClass = "grid h-11 min-w-11 place-items-center rounded sm:h-auto sm:min-w-0 sm:p-1 text-[var(--foreground)]/40 disabled:opacity-20 cursor-pointer active:scale-90 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--accent)]";
+
 export default function QuicklinksPane({ quicklinksManager }: QuicklinksPaneProps) {
+    const formId = useId();
+    const formHeadingRef = useRef<HTMLHeadingElement>(null);
+    const listHeadingRef = useRef<HTMLSpanElement>(null);
+    const addShortcutRef = useRef<HTMLButtonElement>(null);
+    const editShortcutRef = useRef<HTMLButtonElement>(null);
+    const returnFocusRef = useRef(false);
     const [isEditingShortcut, setIsEditingShortcut] = useState(false);
     const [editingShortcutId, setEditingShortcutId] = useState<string | null>(null);
     const [shortcutNameInput, setShortcutNameInput] = useState("");
     const [shortcutUrlInput, setShortcutUrlInput] = useState("");
     const [shortcutIconTypeInput, setShortcutIconTypeInput] = useState<"auto" | "emoji" | "text">("auto");
     const [shortcutCustomIconInput, setShortcutCustomIconInput] = useState("");
+    useLayoutEffect(() => {
+        if (isEditingShortcut) {
+            returnFocusRef.current = true;
+            formHeadingRef.current?.focus();
+        }
+        else if (returnFocusRef.current) {
+            returnFocusRef.current = false;
+            const opener = editingShortcutId ? editShortcutRef.current : addShortcutRef.current;
+            (opener && !opener.disabled ? opener : listHeadingRef.current)?.focus();
+        }
+    }, [isEditingShortcut, editingShortcutId]);
     const openAddShortcut = () => {
         setEditingShortcutId(null);
         setShortcutNameInput("");
@@ -173,24 +193,24 @@ export default function QuicklinksPane({ quicklinksManager }: QuicklinksPaneProp
       </div>
 
       {isEditingShortcut ? (<form onSubmit={handleSaveShortcut} className="flex flex-col gap-3 p-4 rounded-2xl bg-[var(--foreground)]/4 border border-[var(--glass-border)]">
-          <h4 className="text-xs font-semibold text-[var(--foreground)]">
+          <h4 ref={formHeadingRef} tabIndex={-1} className="text-xs font-semibold text-[var(--foreground)]">
             {editingShortcutId ? "Edit Shortcut" : "Add Shortcut"}
           </h4>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-semibold text-[var(--foreground)]/50">Name</label>
-            <input type="text" value={shortcutNameInput} onChange={(e) => setShortcutNameInput(e.target.value)} placeholder="e.g. GitHub" required maxLength={20} className="h-8.5 px-3 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-xs text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)]"/>
+            <label htmlFor={`${formId}-name`} className="text-[10px] uppercase font-semibold text-[var(--foreground)]/50">Name</label>
+            <input id={`${formId}-name`} type="text" value={shortcutNameInput} onChange={(e) => setShortcutNameInput(e.target.value)} placeholder="e.g. GitHub" required maxLength={20} className={shortcutInputClass}/>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-semibold text-[var(--foreground)]/50">URL</label>
-            <input type="text" value={shortcutUrlInput} onChange={(e) => setShortcutUrlInput(e.target.value)} placeholder="https://github.com" required className="h-8.5 px-3 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-xs text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)]"/>
+            <label htmlFor={`${formId}-url`} className="text-[10px] uppercase font-semibold text-[var(--foreground)]/50">URL</label>
+            <input id={`${formId}-url`} type="text" inputMode="url" value={shortcutUrlInput} onChange={(e) => setShortcutUrlInput(e.target.value)} placeholder="https://github.com" required className={shortcutInputClass}/>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-semibold text-[var(--foreground)]/50">Icon Style</label>
-            <div className="flex gap-1 bg-[var(--foreground)]/5 p-1 rounded-xl">
-              {(["auto", "emoji", "text"] as const).map((mode) => (<button key={mode} type="button" onClick={() => setShortcutIconTypeInput(mode)} className={`flex-1 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${shortcutIconTypeInput === mode
+            <span id={`${formId}-icon-style`} className="text-[10px] uppercase font-semibold text-[var(--foreground)]/50">Icon Style</span>
+            <div role="group" aria-labelledby={`${formId}-icon-style`} className="flex gap-1 bg-[var(--foreground)]/5 p-1 rounded-xl">
+              {(["auto", "emoji", "text"] as const).map((mode) => (<button key={mode} type="button" aria-pressed={shortcutIconTypeInput === mode} onClick={() => setShortcutIconTypeInput(mode)} className={`flex-1 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${shortcutIconTypeInput === mode
                     ? "bg-[var(--accent)] text-[var(--background)] font-bold shadow-sm"
                     : "text-[var(--foreground)]/60"}`}>
                   {mode === "auto" ? "Favicon" : mode === "emoji" ? "Emoji" : "Badge"}
@@ -199,10 +219,10 @@ export default function QuicklinksPane({ quicklinksManager }: QuicklinksPaneProp
           </div>
 
           {shortcutIconTypeInput !== "auto" && (<div className="flex flex-col gap-1">
-              <label className="text-[10px] uppercase font-semibold text-[var(--foreground)]/50">
+              <label htmlFor={`${formId}-custom-icon`} className="text-[10px] uppercase font-semibold text-[var(--foreground)]/50">
                 {shortcutIconTypeInput === "emoji" ? "Emoji" : "Badge (1-2 chars)"}
               </label>
-              <input type="text" value={shortcutCustomIconInput} onChange={(e) => setShortcutCustomIconInput(e.target.value)} placeholder={shortcutIconTypeInput === "emoji" ? "🚀" : "GH"} maxLength={shortcutIconTypeInput === "emoji" ? 4 : 2} className="h-8.5 px-3 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-xs text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)]"/>
+              <input id={`${formId}-custom-icon`} type="text" value={shortcutCustomIconInput} onChange={(e) => setShortcutCustomIconInput(e.target.value)} placeholder={shortcutIconTypeInput === "emoji" ? "🚀" : "GH"} maxLength={shortcutIconTypeInput === "emoji" ? 4 : 2} className={shortcutInputClass}/>
             </div>)}
 
           <div className="flex justify-end gap-2 mt-2">
@@ -215,34 +235,34 @@ export default function QuicklinksPane({ quicklinksManager }: QuicklinksPaneProp
           </div>
         </form>) : (<div className="flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[var(--foreground)]/80">
+            <span ref={listHeadingRef} tabIndex={-1} className="text-xs font-semibold text-[var(--foreground)]/80">
               Shortcuts List ({quicklinksManager.quicklinks.length}/12)
             </span>
-            <button onClick={openAddShortcut} disabled={quicklinksManager.quicklinks.length >= 12} className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold bg-[var(--accent)] text-[var(--background)] hover:bg-[var(--accent)]/90 disabled:opacity-40 rounded-lg transition-all cursor-pointer active:scale-95">
+            <button ref={addShortcutRef} type="button" onClick={openAddShortcut} disabled={quicklinksManager.quicklinks.length >= 12} className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold bg-[var(--accent)] text-[var(--background)] hover:bg-[var(--accent)]/90 disabled:opacity-40 rounded-lg transition-all cursor-pointer active:scale-95">
               <Plus className="w-3 h-3"/> Add Link
             </button>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            {quicklinksManager.quicklinks.map((link, idx) => (<div key={link.id} className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--glass-border)]/30 bg-[var(--foreground)]/3">
+            {quicklinksManager.quicklinks.map((link, idx) => (<div key={link.id} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-0 p-2.5 rounded-xl border border-[var(--glass-border)]/30 bg-[var(--foreground)]/3">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Favicon link={link} size="sm"/>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-xs font-semibold truncate">{link.title}</span>
+                    <span className="text-xs font-semibold [overflow-wrap:anywhere] sm:truncate">{link.title}</span>
                     <span className="text-[9px] text-[var(--foreground)]/45 truncate">{link.url}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => quicklinksManager.moveLink(idx, "up")} disabled={idx === 0} className="p-1 rounded text-[var(--foreground)]/40 hover:text-[var(--accent)] disabled:opacity-20 cursor-pointer active:scale-90" title="Move up">
+                <div className="grid grid-cols-4 gap-1 shrink-0 sm:flex sm:items-center">
+                  <button type="button" onClick={() => quicklinksManager.moveLink(idx, "up")} disabled={idx === 0} className={`${shortcutActionClass} hover:text-[var(--accent)]`} aria-label={`Move ${link.title} up`} title="Move up">
                     <ArrowUp className="w-3.5 h-3.5"/>
                   </button>
-                  <button onClick={() => quicklinksManager.moveLink(idx, "down")} disabled={idx === quicklinksManager.quicklinks.length - 1} className="p-1 rounded text-[var(--foreground)]/40 hover:text-[var(--accent)] disabled:opacity-20 cursor-pointer active:scale-90" title="Move down">
+                  <button type="button" onClick={() => quicklinksManager.moveLink(idx, "down")} disabled={idx === quicklinksManager.quicklinks.length - 1} className={`${shortcutActionClass} hover:text-[var(--accent)]`} aria-label={`Move ${link.title} down`} title="Move down">
                     <ArrowDown className="w-3.5 h-3.5"/>
                   </button>
-                  <button onClick={() => openEditShortcut(link)} className="p-1 rounded text-[var(--foreground)]/40 hover:text-[var(--accent)] cursor-pointer active:scale-90" title="Edit">
+                  <button ref={link.id === editingShortcutId ? editShortcutRef : undefined} type="button" onClick={() => openEditShortcut(link)} className={`${shortcutActionClass} hover:text-[var(--accent)]`} aria-label={`Edit ${link.title}`} title="Edit">
                     <Pencil className="w-3.5 h-3.5"/>
                   </button>
-                  <button onClick={() => quicklinksManager.deleteLink(link.id)} className="p-1 rounded text-[var(--foreground)]/40 hover:text-rose-400 cursor-pointer active:scale-90" title="Delete">
+                  <button type="button" onClick={() => quicklinksManager.deleteLink(link.id)} className={`${shortcutActionClass} hover:text-rose-400`} aria-label={`Delete ${link.title}`} title="Delete">
                     <Trash2 className="w-3.5 h-3.5"/>
                   </button>
                 </div>

@@ -220,14 +220,14 @@ export default function Quicklinks() {
               <label htmlFor={`${dialogId}-name`} className="text-[11px] font-medium tracking-wide uppercase text-[var(--foreground)]/50">
                 Name
               </label>
-              <input id={`${dialogId}-name`} ref={nameInputRef} type="text" placeholder="e.g. GitHub" value={nameInput} onChange={(e) => setNameInput(e.target.value)} required maxLength={20} className="w-full h-[38px] px-3.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-sm text-[var(--foreground)] placeholder-[var(--foreground)]/30 focus:outline-none focus:border-[var(--accent)] focus:bg-[var(--foreground)]/8 transition-all duration-300"/>
+              <input id={`${dialogId}-name`} ref={nameInputRef} type="text" placeholder="e.g. GitHub" value={nameInput} onChange={(e) => setNameInput(e.target.value)} required maxLength={20} className="w-full h-[38px] px-3.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-base sm:text-sm text-[var(--foreground)] placeholder-[var(--foreground)]/30 focus:outline-none focus:border-[var(--accent)] focus:bg-[var(--foreground)]/8 transition-all duration-300"/>
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor={`${dialogId}-url`} className="text-[11px] font-medium tracking-wide uppercase text-[var(--foreground)]/50">
                 URL
               </label>
-              <input id={`${dialogId}-url`} type="text" placeholder="e.g. https://github.com" value={urlInput} onChange={(e) => setUrlInput(e.target.value)} required className="w-full h-[38px] px-3.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-sm text-[var(--foreground)] placeholder-[var(--foreground)]/30 focus:outline-none focus:border-[var(--accent)] focus:bg-[var(--foreground)]/8 transition-all duration-300"/>
+              <input id={`${dialogId}-url`} type="text" placeholder="e.g. https://github.com" value={urlInput} onChange={(e) => setUrlInput(e.target.value)} required className="w-full h-[38px] px-3.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-base sm:text-sm text-[var(--foreground)] placeholder-[var(--foreground)]/30 focus:outline-none focus:border-[var(--accent)] focus:bg-[var(--foreground)]/8 transition-all duration-300"/>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -257,7 +257,7 @@ export default function Quicklinks() {
                 <label htmlFor={`${dialogId}-custom-icon`} className="text-[11px] font-medium tracking-wide uppercase text-[var(--foreground)]/50">
                   {iconTypeInput === "emoji" ? "Emoji Icon" : "Badge Text (1-2 chars)"}
                 </label>
-                <input id={`${dialogId}-custom-icon`} type="text" placeholder={iconTypeInput === "emoji" ? "e.g. 🚀 or 💻" : "e.g. GH"} value={customIconInput} onChange={(e) => setCustomIconInput(e.target.value)} maxLength={iconTypeInput === "emoji" ? 4 : 2} className="w-full h-[38px] px-3.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-sm text-[var(--foreground)] placeholder-[var(--foreground)]/30 focus:outline-none focus:border-[var(--accent)] focus:bg-[var(--foreground)]/8 transition-all duration-300"/>
+                <input id={`${dialogId}-custom-icon`} type="text" placeholder={iconTypeInput === "emoji" ? "e.g. 🚀 or 💻" : "e.g. GH"} value={customIconInput} onChange={(e) => setCustomIconInput(e.target.value)} maxLength={iconTypeInput === "emoji" ? 4 : 2} className="w-full h-[38px] px-3.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-base sm:text-sm text-[var(--foreground)] placeholder-[var(--foreground)]/30 focus:outline-none focus:border-[var(--accent)] focus:bg-[var(--foreground)]/8 transition-all duration-300"/>
               </div>)}
 
             <div className="flex items-center justify-between gap-3 mt-2">
