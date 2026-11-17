@@ -2,6 +2,7 @@ import { settings, STORAGE_PREFIX, LEGACY_STORAGE_PREFIX } from "./settings";
 import { SETTINGS_SCHEMA } from "./settingsSchema";
 import { clearBackgroundBlob, getBackgroundBlob } from "./backgroundDb";
 import { siteConfig } from "@/config/site";
+import type { Quicklink } from "./quicklinks";
 export interface SettingsBackup {
     app: string;
     version: string;
@@ -11,6 +12,25 @@ export interface SettingsBackup {
 // Sync consent is device-local. Derived colors and daily wallpaper cache are regenerated.
 const BACKUP_KEYS = new Set(Object.keys(SETTINGS_SCHEMA).filter((key) =>
     key !== "settings-sync" && key !== "auto-accent-color" && key !== "bg-bing-cache"));
+function isQuicklink(value: unknown): value is Quicklink {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+        return false;
+    const link = value as Record<string, unknown>;
+    return typeof link.id === "string" &&
+        typeof link.title === "string" &&
+        typeof link.url === "string" &&
+        (link.iconType === undefined || link.iconType === "auto" || link.iconType === "emoji" || link.iconType === "text") &&
+        (link.customIcon === undefined || typeof link.customIcon === "string");
+}
+function hasValidQuicklinks(raw: string): boolean {
+    try {
+        const value: unknown = JSON.parse(raw);
+        return Array.isArray(value) && value.every(isQuicklink);
+    }
+    catch {
+        return false;
+    }
+}
 export function getExportData(): SettingsBackup {
     const settingsMap: Record<string, string> = {};
     BACKUP_KEYS.forEach((key) => {
@@ -73,8 +93,16 @@ export async function importSettingsFromJson(jsonString: string): Promise<Import
                 : rawKey.startsWith(LEGACY_STORAGE_PREFIX)
                     ? rawKey.slice(LEGACY_STORAGE_PREFIX.length)
                     : rawKey;
-            if (BACKUP_KEYS.has(logicalKey) && typeof val === "string")
-                imported.set(logicalKey, val);
+            if (!BACKUP_KEYS.has(logicalKey))
+                continue;
+            if (typeof val !== "string") {
+                if (logicalKey === "quicklinks")
+                    return { success: false, importedCount: 0, error: "Invalid Quicklinks in backup: expected a JSON string containing an array of shortcuts." };
+                continue;
+            }
+            if (logicalKey === "quicklinks" && !hasValidQuicklinks(val))
+                return { success: false, importedCount: 0, error: "Invalid Quicklinks in backup: expected a JSON array of shortcuts with string id, title, and url fields." };
+            imported.set(logicalKey, val);
         }
         if (imported.size === 0) {
             return { success: false, importedCount: 0, error: "No recognized Atrium Tabs settings found in backup." };
