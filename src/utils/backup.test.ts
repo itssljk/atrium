@@ -67,6 +67,53 @@ describe("backup and reset", () => {
         expect(await importSettingsFromJson('{"username":"Alex"}')).toMatchObject({ success: false, importedCount: 0 });
     });
 
+    it.each([
+        ["null", "null"],
+        ["object", '{"id":"one","title":"One","url":"https://example.com"}'],
+        ["number", "42"],
+        ["malformed JSON", "[not json"],
+        ["null entry", '[null]'],
+        ["missing title", '[{"id":"one","url":"https://example.com"}]'],
+        ["invalid icon type", '[{"id":"one","title":"One","url":"https://example.com","iconType":"image"}]'],
+        ["invalid custom icon", '[{"id":"one","title":"One","url":"https://example.com","customIcon":{}}]'],
+    ])("rejects %s Quicklinks without importing any settings", async (_case, quicklinks) => {
+        settings.set("username", "Existing");
+        const set = vi.spyOn(settings, "set");
+        const result = await importSettingsFromJson(JSON.stringify({ settings: {
+            username: "Imported", quicklinks, "settings-greeting": "false",
+        } }));
+
+        expect(result).toMatchObject({ success: false, importedCount: 0, error: expect.stringContaining("Quicklinks") });
+        expect(set).not.toHaveBeenCalled();
+        expect(settings.get("username")).toBe("Existing");
+        expect(settings.get("settings-greeting")).toBe("");
+        expect(settings.get("quicklinks")).toBe("");
+    });
+
+    it("rejects a non-string recognized setting before writing another setting", async () => {
+        const set = vi.spyOn(settings, "set");
+        const result = await importSettingsFromJson(JSON.stringify({ settings: {
+            username: "Imported", quicklinks: null,
+        } }));
+
+        expect(result).toMatchObject({ success: false, importedCount: 0, error: expect.stringContaining("Quicklinks") });
+        expect(set).not.toHaveBeenCalled();
+    });
+
+    it("imports a valid Quicklinks backup with optional icon fields", async () => {
+        const quicklinks = [
+            { id: "one", title: "Example", url: "https://example.com" },
+            { id: "two", title: "Search", url: "https://example.com/search", iconType: "text", customIcon: "SE" },
+        ];
+        const result = await importSettingsFromJson(JSON.stringify({ settings: {
+            username: "Imported", quicklinks: JSON.stringify(quicklinks),
+        } }));
+
+        expect(result).toMatchObject({ success: true, importedCount: 2 });
+        expect(settings.getValue("quicklinks")).toEqual(quicklinks);
+        expect(settings.get("username")).toBe("Imported");
+    });
+
     it("uses the default background with a warning if an imported upload is not available locally", async () => {
         vi.spyOn(wallpaper, "getBackgroundBlob").mockResolvedValue(null);
         expect(await importSettingsFromJson('{"settings":{"bg-type":"upload"}}')).toMatchObject({
